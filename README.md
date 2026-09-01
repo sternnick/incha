@@ -9,11 +9,11 @@ An Elder Scrolls Online addon that provides a real-time mechanics overlay for ve
 | Kyne's Aegis (KA) | ✅ Feature-complete |
 | Rockgrove (RG) | 🔄 In progress |
 | Dreadsail Reef (DSR) | 🔄 In progress |
-| Asylum Sanctorium (AS) | 📋 Planned |
-| Cloudrest (CR) | 📋 Planned |
-| Sanity's Edge (SE) | 📋 Planned |
-| Lucent Citadel (LC) | 📋 Planned |
-| Ossein Cage (OC) | 📋 Planned |
+| Asylum Sanctorium (AS) | 🔄 In progress |
+| Cloudrest (CR) | 🔄 In progress |
+| Sanity's Edge (SE) | 🔄 In progress |
+| Lucent Citadel (LC) | 🔄 In progress |
+| Ossein Cage (OC) | 🔄 In progress |
 | Sunspire (SS) | 🔄 In progress |
 
 ## Optional dependencies
@@ -32,7 +32,9 @@ Install via [Minion](https://minion.mmoui.com/) or manually from [ESOUI](https:/
    ```
    Documents\Elder Scrolls Online\live\AddOns\incha\
    ```
-2. The folder **must** be named `incha` (lowercase) — the manifest requires it.
+2. The folder **must** be named `incha` (lowercase). ESO derives `ADDON_NAME`
+   from the folder name — not from the manifest — and `bootstrap.lua:15-19`
+   builds the log prefix, slash command and saved-variable name from it.
 3. Launch ESO and enable **Incha** in the addon manager.
 
 ## Usage
@@ -97,8 +99,7 @@ core/                  engine (BossRegistry, CombatHandler, EventPipeline, Setti
 ui/                    overlay panel and settings menu
 trial/<id>/            per-trial modules
   boss/<Name>.lua      per-boss combat handlers
-  Factory.lua          trial setup / zone detection
-  Dispatcher.lua       event routing
+  Factory.lua          trial setup / zone detection and boss order
 test/                  offline test harness
 ```
 

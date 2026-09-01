@@ -87,7 +87,8 @@ Checked items are **shipped** (committed). Unchecked items are pending.
 
 ### Phase 3B — Overlay UI (in-play HUD)
 - [x] `ui/Panel.lua` — `WINDOW_MANAGER` overlay implementing AlertSink vocabulary
-      (`header`, `info1–3`, `action`, `clear`, `hideAction`).
+      (`header`, `info1–10`, `action`, `clear`, `hideAction`; 10 info lines —
+      INFO_LINE_COUNT in ui/Panel.lua:37 — in a 320x260 window.)
       Drag-to-move + lock; position/scale persisted in `core/Settings.lua`.
       Used by `ka`, `rg`, `dsr` as default bridge.
 
@@ -214,7 +215,7 @@ BOSS_EVENT              = 10298   -- ACTION_RESULT_EFFECT_GAINED hitValue=1
 
 ---
 
-### CR — Cloudrest (zoneId = TBD) 📋 Planned
+### CR — Cloudrest (zoneId = 1051) 🔄 In progress
 
 **Architecture note:** CR supports +0/+1/+2/+3 variants. The mini-bosses (Siroria, Relequen, Galenwe)
 can be active simultaneously with Z'Maja. Use a single encounter module similar to AS,
@@ -324,7 +325,7 @@ ZMAJA_SHACKLE_MINI = 107490  -- Mini dies → Z'Maja phase
 
 ---
 
-### LC — Lucent Citadel (zoneId = TBD) 📋 Planned
+### LC — Lucent Citadel (zoneId = 1478) 🔄 In progress
 
 **Architecture note:** Sequential bosses, fits single-active-boss model.
 5–6 encounters: Baron, Cavot, Orphic, Xoryn, Zilyesset (with Count Ryelaz).
@@ -415,7 +416,7 @@ These modules exist in LC main but LCH doesn't cover them → mechanics unknown 
 
 ---
 
-### OC — Ossein Cage (zoneId = TBD) 📋 Planned
+### OC — Ossein Cage (zoneId = 1548) 🔄 In progress
 
 **Architecture note:** 3 sequential bosses, fits single-active-boss model.
 Boss 1: Jynorah (with Skorkhif mini). Boss 2: Kazpian. Boss 3: Shaper of Flesh.
