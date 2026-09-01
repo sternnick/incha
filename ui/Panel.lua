@@ -77,7 +77,7 @@ local function build()
     local sv = Settings.get().overlay
 
     -- Outer container  -  the draggable root.
-    local panel = WINDOW_MANAGER:CreateControl("InchPanel", GuiRoot, CT_CONTROL)
+    local panel = WINDOW_MANAGER:CreateControl("Incha_Panel", GuiRoot, CT_CONTROL)
     panel:SetDimensions(W, H)
     panel:SetClampedToScreen(true)
     panel:SetMouseEnabled(not sv.locked)
