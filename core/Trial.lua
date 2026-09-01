@@ -230,6 +230,26 @@ function Trial:enable()
 
     self.enabled = true
 
+    -- 16 of 25 boss modules still carry a placeholder hmHealthThreshold and 42
+    -- context.isHM gates depend on it: a wrong boundary silently shows or hides
+    -- whole mechanic displays. Say so once per boss per session so the value
+    -- gets measured (see /incha hp) instead of guessed.
+    if not self.hmThresholdWarned then
+        self.hmThresholdWarned = {}
+    end
+    for _, boss in ipairs(self.registry.bosses) do
+        local th = boss.hmHealthThreshold
+        if (th == nil or th == math.huge or th == 100000001)
+           and not self.hmThresholdWarned[boss.key] then
+            self.hmThresholdWarned[boss.key] = true
+            require("lib.Log").warn(
+                "%s/%s: hmHealthThreshold = %s - hardmode detection is a guess. "
+                .. "Pull the boss once in normal and once in hardmode, run "
+                .. "/incha hp for each, and set the threshold between them.",
+                self.id, boss.key, tostring(th))
+        end
+    end
+
     self.bridge.onEnable()
 
     self.pipeline:enable()

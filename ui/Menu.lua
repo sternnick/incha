@@ -344,6 +344,8 @@ local function printHelp()
     d("  " .. ADDON_SLASH .. " lock           -  toggle overlay drag lock")
     d("  " .. ADDON_SLASH .. " scale <n>      -  set overlay scale (0.5 - 3.0)")
     d("  " .. ADDON_SLASH .. " reset          -  reset overlay to default position")
+    d("  " .. ADDON_SLASH .. " hp             -  print boss slot health pools "
+        .. "(for hmHealthThreshold)")
     d("  /ip panel          -  show sample panel data (use /ip, not /incha)")
     d("  /ip inst           -  animate instability head icon")
     d("  /ip border         -  flash CA border")
@@ -381,6 +383,25 @@ local function handleSlash(text)
         sv.overlay.scale   = 1.0
         Panel.refresh()
         d("|cFFD700[Incha]|r Overlay position reset")
+
+    elseif cmd == "hp" then
+        -- Measure hmHealthThreshold in one pull: the pool is what
+        -- BossRegistry:detectDifficulty compares against, and it cannot be
+        -- read from a log file.
+        d(ADDON_TAG .. " boss slot health pools:")
+        for _, slot in ipairs({ "boss1", "boss2", "boss3", "boss4" }) do
+            if DoesUnitExist(slot) then
+                local cur, max, eMax = GetUnitPower(slot, POWERTYPE_HEALTH)
+                cur, max, eMax = tonumber(cur) or 0, tonumber(max) or 0,
+                    tonumber(eMax) or 0
+                d(string.format("  %s  %-24s max=%d  effectiveMax=%d  %.1f%%",
+                    slot, tostring(GetUnitName(slot)), max, eMax,
+                    max > 0 and (cur / max * 100) or 0))
+            else
+                d("  " .. slot .. "  (empty)")
+            end
+        end
+        d("  set hmHealthThreshold between the normal and hardmode values.")
 
     elseif cmd == "preview" then
         local sub = arg:match("^%s*(%S*)")
