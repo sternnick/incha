@@ -462,13 +462,19 @@ local function handleInfuserBuff(self, context, alerts, abilityId, ...)
     CA.alert(nil, "Infuser Buff passed!", 0xFF8800FF, SOUNDS.DUEL_START, 3000)
 end
 
+--- Header name for the unit we actually tracked (F-02/F-03): "boss1" is only
+--- correct while Falgravn is the first occupied slot.
+local function bossName(context)
+    return GetUnitName(context.bossUnitTag or "boss1")
+end
+
 -- HM confirmation ability (plain entry: receives result).
 local function handleFalgravnHm(self, context, alerts, result, abilityId, ...)
     if result == ACTION_RESULT_EFFECT_GAINED then
         self.bHM = true
-        alerts:showHeader(GetUnitName("boss1") .. " [HM: ON]")
+        alerts:showHeader(bossName(context) .. " [HM: ON]")
     elseif result == ACTION_RESULT_EFFECT_FADED then
-        alerts:showHeader(GetUnitName("boss1"))
+        alerts:showHeader(bossName(context))
         zo_callLater(function()
             if not IsUnitInCombat("player") then self.bHM = false end
         end, 2000)
