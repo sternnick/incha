@@ -9,6 +9,7 @@ end
 -- (e.g. a per-trial setting flag) without polluting TrialContext.
 -- Legacy when(ctx) predicates that ignore the second arg still work fine.
 function HealthRules.matches(rule, healthPercent, context, boss)
+    if rule.min == nil or rule.max == nil then return false end
     if healthPercent < rule.min or healthPercent > rule.max then
         return false
     end

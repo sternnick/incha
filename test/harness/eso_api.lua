@@ -43,6 +43,9 @@ POWERTYPE_HEALTH  = 0
 POWERTYPE_MAGICKA = 1
 POWERTYPE_STAMINA = 2
 
+-- -- LFG role constant -----------------------------------------------------
+LFG_ROLE_TANK = 1
+
 -- -- Event filter constants ------------------------------------------------
 REGISTER_FILTER_POWER_TYPE      = 1
 REGISTER_FILTER_UNIT_TAG_PREFIX = 2
@@ -119,6 +122,19 @@ end
 
 function GetLocalPlayerGroupUnitTag() return "player" end
 
+function GetPlayerRoles()
+    -- Returns (roles, isHealer, isTank, isDropper).
+    if not _tracker then return "", false, false, false end
+    return "", false, false, false
+end
+
+function GetSelectedLFGRole() return 0 end
+
+function AreUnitsEqual(tagA, tagB)
+    if tagA == tagB then return true end
+    return false
+end
+
 -- -- Map utilities (used by MapUtils module) -------------------------------
 function SetMapToPlayerLocation() end
 function GetMapPlayerPosition(unitTag) return 0.5, 0.5 end
@@ -127,6 +143,7 @@ function GetMapPlayerPosition(unitTag) return 0.5, 0.5 end
 function GetAbilityCastInfo(abilityId) return 2000 end
 function GetAbilityName(abilityId)     return "" end
 function GetAbilityIcon(abilityId)     return "" end
+function GetAbilityDuration(abilityId) return 2000 end
 
 -- -- Deferred calls --------------------------------------------------------
 -- zo_callLater returns a handle; Phase 1 does not execute the callback

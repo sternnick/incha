@@ -220,11 +220,12 @@ local function handleSoulTear(self, context, alerts, abilityId, ...)
 end
 
 local function handleFireStorm(self, context, alerts, abilityId, ...)
-    if not self.firstStormTrig then
-        self.firstStormTrig = true
+    if self.firstStormTrig then
+        -- First fire storm of the pull is imminent at pull start; skip it.
+        self.firstStormTrig = false
         return
     end
-    self.firstStormTrig = false
+    -- All subsequent fire storms: show the begin/landing countdown.
     local now        = GetGameTimeMilliseconds() / 1000
     self.stormTime   = now + 13.7
     self.landingTime = self.stormTime + 6.6

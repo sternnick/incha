@@ -10,8 +10,8 @@ local MapUtils = {}
 --- Existing call-sites that relied on the old normalised * 1000 scale must be
 --- recalibrated in-game (see GitHub issues #29, #30, #31).
 function MapUtils.isGroupMemberNearby(unitTag, threshold)
-    local x1, _, z1 = GetUnitWorldPosition("player")
-    local x2, _, z2 = GetUnitWorldPosition(unitTag)
+    local _, x1, _, z1 = GetUnitWorldPosition("player")
+    local _, x2, _, z2 = GetUnitWorldPosition(unitTag)
     if not x1 or not x2 then return false end
     return math.sqrt((x1 - x2)^2 + (z1 - z2)^2) <= threshold
 end
