@@ -1,0 +1,132 @@
+patch series verification (see verify-patches.py docstring for what each column means)
+BASE = 66977e3077bd4d046ca3621fc98c1754e8235651
+series_applied_in_order = True
+
+{
+  "per_patch": [
+    {
+      "patch": "01-fix-strip-utf8-bom.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": true,
+      "luaparse_line": "files: 69  syntax failures: 0",
+      "static_checks": null
+    },
+    {
+      "patch": "02-fix-panel-cache-and-control-name.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 2,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    },
+    {
+      "patch": "03-fix-boss-slot-and-alert-hygiene.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    },
+    {
+      "patch": "04-fix-hardmode-measurement-aid.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    },
+    {
+      "patch": "05-feature-live-trial-enable.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    },
+    {
+      "patch": "06-fix-single-version-source.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    },
+    {
+      "patch": "07-feature-ci-static-validation.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": false
+    },
+    {
+      "patch": "08-fix-docs-drift-corrections.patch",
+      "apply_check": true,
+      "git_am": true,
+      "commits": 1,
+      "luaparse_clean": false,
+      "luaparse_line": "files: 69  syntax failures: 9",
+      "static_checks": null
+    }
+  ]
+}
+
+INCHA REVIEW CHECKS  (/tmp/vp2-all)
+========================================================================
+[FAIL] C-06 unread settings
+       settings keys exposed in the LAM panel but never read by any consumer: showBossUI
+       at: core/Settings.lua DEFAULTS.trials + ui/Menu.lua checkboxes
+[WARN] C-07 HM thresholds
+       7 bosses use math.huge (detectDifficulty can never return HARDMODE) and 5 use the 100000001 placeholder: trial/as/boss/OlmsEncounter.lua, trial/cr/boss/ZmajaEncounter.lua, trial/dsr/boss/Lylanar.lua, trial/dsr/boss/ReefGuardian.lua, trial/dsr/boss/Taleria.lua, trial/lc/boss/DarielEncounter.lua, trial/lc/boss/XynizataEncounter.lua, trial/oc/boss/JynorahEncounter.lua, trial/oc/boss/KazpianEncounter.lua, trial/oc/boss/ShaperEncounter.lua, trial/rg/boss/Bahsei.lua, trial/rg/boss/Xalvakka.lua
+       at: BossRegistry:detectDifficulty, core/BossRegistry.lua:61-71
+[WARN] C-08 proximity scale
+       lib/MapUtils.isGroupMemberNearby now measures GetUnitWorldPosition units, but these call-sites still pass pre-rewrite values, so the alert can never fire: trial/ss/boss/Lokke.lua:230 uses 4.5; trial/ss/boss/Nahvii.lua:173 uses 7; trial/ss/boss/Yolna.lua:106 uses 2.8
+       at: lib/MapUtils.lua:5-17
+[WARN] C-17 unrouted ability ids
+       16 declared ability IDs appear nowhere else in their file: the mechanic is documented but never routed, so no alert can ever fire for it. Either route them or move them to the ROADMAP backlog:
+       at: trial/cr/boss/ZmajaEncounter.lua:67 GALE_HOARFROST_AO ids 103765; trial/cr/boss/ZmajaEncounter.lua:96 BEAD_TICK ids 105339; trial/cr/boss/ZmajaEncounter.lua:97 BEAD_SPAWN ids 105363; trial/cr/boss/ZmajaEncounter.lua:98 BEAD_CHARGE ids 105373; trial/cr/boss/ZmajaEncounter.lua:100 BREAK_AMULET ids 106023; trial/cr/boss/ZmajaEncounter.lua:101 MALICIOUS_SPHERE ids 105291; trial/dsr/boss/Lylanar.lua:61 PRE_FIREBRAND ids 166355; trial/dsr/boss/Lylanar.lua:77 PRE_FROSTBRAND ids 166364; trial/dsr/boss/ReefGuardian.lua:28 ACID_POOL ids 165987; trial/dsr/boss/Taleria.lua:47 NEMATOCYST_P ids 174679; trial/dsr/boss/Taleria.lua:48 NEMATOCYST_AOE ids 169938; trial/dsr/boss/Taleria.lua:49 SWELTERING_P ids 174689; trial/dsr/boss/Taleria.lua:50 SWELTERING_AOE ids 169936; trial/dsr/boss/Taleria.lua:51 SUFFOCATING_P ids 174691; trial/dsr/boss/Taleria.lua:52 SUFFOCATING_AOE ids 169935; trial/se/boss/YaseylaEncounter.lua:45 ARCHER_TRUE_SHOT ids 184802
+[WARN] C-18 isHM gates
+       boss modules branch on context.isHM while their threshold is a placeholder, so those branches are driven by an unmeasured boundary (may mis-detect in either direction): trial/dsr/boss/Lylanar.lua (threshold 100000001): 16 gates at lines 41, 224, 261, 411, 425, 497, 499, 518, 520, 554, 564, 615 … | trial/dsr/boss/Taleria.lua (threshold 100000001): 5 gates at lines 300, 301, 392, 392, 394 | trial/rg/boss/Bahsei.lua (threshold 100000001): 14 gates at lines 26, 122, 193, 295, 296, 316, 325, 339, 340, 357, 357, 359 … | trial/rg/boss/Xalvakka.lua (threshold 100000001): 7 gates at lines 32, 194, 269, 270, 338, 338, 339
+[WARN] C-19 CA bar handles
+       CA.castAlertsStart returns an id used to stop the bar early; these call sites discard it, so the bar cannot be cancelled on wipe or zone exit and will keep running for its full duration: trial/dsr/DreadsailCommon.lua:111, trial/dsr/DreadsailCommon.lua:121, trial/ka/boss/Falgravn.lua:521, trial/rg/RockgroveCommon.lua:108, trial/rg/RockgroveCommon.lua:116, trial/rg/boss/Oaxiltso.lua:106 (CA.alertCast is a one-shot bar and is fine)
+[NOTE] C-09 nil stateSchema
+       `key = nil` inside a table constructor stores nothing, so BossBase.fromSchema cannot create these fields — the entries are documentation only: trial/oc/boss/JynorahEncounter.lua:78 playerCurse; trial/oc/boss/KazpianEncounter.lua:66 chainedA; trial/oc/boss/KazpianEncounter.lua:67 chainedB; trial/rg/boss/Oaxiltso.lua:62 sludgeTracker1Tag; trial/rg/boss/Oaxiltso.lua:63 sludgeTracker1Name
+[NOTE] C-11 doc drift
+       ROADMAP.md 'Open architecture questions' #1 still describes the core -> ui.Bridge inversion that has since been fixed (core/Bridge.lua exists, ui/Bridge.lua does not) | ui/Panel.lua header comment says H=200 while the code uses local W, H = 320, 260
+[NOTE] C-17b unused constants
+       23 unused locals: 7 ID sets that duplicate inline literals (cleanup), 16 tuning/colour constants (7 of the *_FIRST_CD group are measured first-pull cooldowns that are never wired to Timer:reset): trial/cr/boss/ZmajaEncounter.lua:9 SIRO_IDS (all 6 ids routed inline); trial/cr/boss/ZmajaEncounter.lua:17 RELE_IDS (all 6 ids routed inline); trial/cr/boss/ZmajaEncounter.lua:25 GALE_IDS (all 10 ids routed inline); trial/ka/boss/Falgravn.lua:14 ICON_INSTABILITY (all 1 ids routed inline); trial/rg/boss/Bahsei.lua:38 MT_ATTACK_IDS (all 3 ids routed inline); trial/rg/boss/Xalvakka.lua:51 SCATHING_IDS (all 3 ids routed inline); trial/rg/boss/Xalvakka.lua:52 DEADSTAR_IDS (all 2 ids routed inline); trial/as/boss/OlmsEncounter.lua:34 DORMANT_CD; trial/cr/boss/ZmajaEncounter.lua:112 HOARFROST_DROP; trial/cr/boss/ZmajaEncounter.lua:114 COMET_WINDOW; trial/lc/boss/OrphicEncounter.lua:17 THRALL_FIRST_CD; trial/lc/boss/OrphicEncounter.lua:19 FLOOD_FIRST_CD; trial/lc/boss/XynizataEncounter.lua:12 BEAM_FIRST_CD; trial/lc/boss/XynizataEncounter.lua:14 VITRIFY_FIRST_CD; trial/oc/boss/JynorahEncounter.lua:44 LEAP_IDS; trial/oc/boss/JynorahEncounter.lua:50 LEAP_FIRST_CD; trial/se/boss/AnsuulEncounter.lua:39 COL_GREEN; trial/se/boss/AnsuulEncounter.lua:40 COL_RED; trial/se/boss/YaseylaEncounter.lua:48 FIREBOMB_FIRST_CD; trial/se/boss/YaseylaEncounter.lua:53 FROST_FIRST_CD; trial/se/boss/YaseylaEncounter.lua:58 COL_ICE; trial/se/boss/YaseylaEncounter.lua:59 COL_ELEC; trial/ss/boss/Nahvii.lua:51 COL_THRASH
+[NOTE] C-20 zo_callLater handles
+       deferred callbacks whose handle is discarded cannot be cancelled by onWipe/onLeave; each must only touch state it re-checks itself: trial/dsr/boss/Lylanar.lua:289, trial/dsr/boss/Lylanar.lua:306, trial/dsr/boss/ReefGuardian.lua:120, trial/ka/boss/Falgravn.lua:399, trial/ka/boss/Falgravn.lua:478, trial/ka/boss/Vrol.lua:69, trial/ss/boss/Lokke.lua:89, ui/Menu.lua:471
+[PASS] C-01 BOM
+       no BOM in any source file
+[PASS] C-02 manifest
+       all 65 addon files are listed exactly once
+[PASS] C-03 load order
+       every require() target appears before its consumer in incha.txt
+[PASS] C-04 registration
+       each module registers exactly its path-derived module name
+[PASS] C-05 route signatures
+       370 route entries agree with the CombatHandler dispatch convention (the Jynorah P0 bug class has not recurred)
+[PASS] C-10 version
+       version string is consistent (0.1.0)
+[PASS] C-13 syntax
+       files: 69  syntax failures: 0
+[PASS] C-14 control names
+       every named control is prefixed with Incha
+[PASS] C-15 panel caches
+       hideAction resets the action text cache
+[PASS] C-21 forward references
+       no call site precedes its `local function` declaration (Lua would bind nil there)
+[PASS] C-22 harness parity
+       all 9 zones and every boss order in test/run_log.lua match the Factories
+------------------------------------------------------------------------
+PASS 11   WARN 5   FAIL 1   NOTE 4
+findings written to /tmp/verify-findings.json

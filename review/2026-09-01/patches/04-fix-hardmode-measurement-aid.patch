@@ -1,0 +1,96 @@
+From 1893b70efa95f89fc92d4f154b43d8ef6bb9af76 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] fix(core): make placeholder HM thresholds loud, and
+ measurable
+
+detectDifficulty() compares the boss's max health against
+hmHealthThreshold. 7 modules set math.huge (hardmode can never be
+detected), 5 set the 100000001 placeholder, 4 have no field at all, and
+42 context.isHM gates in Lylanar/Taleria/Bahsei/Xalvakka branch on the
+result. The values are unmeasurable offline, so instead of guessing again
+this makes the gap visible in chat and adds "/incha hp" to read the real
+pools from a single pull.
+
+No behaviour change for the 9 modules with a real threshold.
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-04, F-18).
+Verification: static analysis only - not run in-game.
+---
+ core/Trial.lua | 20 ++++++++++++++++++++
+ ui/Menu.lua    | 21 +++++++++++++++++++++
+ 2 files changed, 41 insertions(+)
+
+diff --git a/core/Trial.lua b/core/Trial.lua
+index c22d383..8c7d84b 100644
+--- a/core/Trial.lua
++++ b/core/Trial.lua
+@@ -230,6 +230,26 @@ function Trial:enable()
+ 
+     self.enabled = true
+ 
++    -- 16 of 25 boss modules still carry a placeholder hmHealthThreshold and 42
++    -- context.isHM gates depend on it: a wrong boundary silently shows or hides
++    -- whole mechanic displays. Say so once per boss per session so the value
++    -- gets measured (see /incha hp) instead of guessed.
++    if not self.hmThresholdWarned then
++        self.hmThresholdWarned = {}
++    end
++    for _, boss in ipairs(self.registry.bosses) do
++        local th = boss.hmHealthThreshold
++        if (th == nil or th == math.huge or th == 100000001)
++           and not self.hmThresholdWarned[boss.key] then
++            self.hmThresholdWarned[boss.key] = true
++            require("lib.Log").warn(
++                "%s/%s: hmHealthThreshold = %s - hardmode detection is a guess. "
++                .. "Pull the boss once in normal and once in hardmode, run "
++                .. "/incha hp for each, and set the threshold between them.",
++                self.id, boss.key, tostring(th))
++        end
++    end
++
+     self.bridge.onEnable()
+ 
+     self.pipeline:enable()
+diff --git a/ui/Menu.lua b/ui/Menu.lua
+index 1d903b8..6a6c410 100644
+--- a/ui/Menu.lua
++++ b/ui/Menu.lua
+@@ -344,6 +344,8 @@ local function printHelp()
+     d("  " .. ADDON_SLASH .. " lock           -  toggle overlay drag lock")
+     d("  " .. ADDON_SLASH .. " scale <n>      -  set overlay scale (0.5 - 3.0)")
+     d("  " .. ADDON_SLASH .. " reset          -  reset overlay to default position")
++    d("  " .. ADDON_SLASH .. " hp             -  print boss slot health pools "
++        .. "(for hmHealthThreshold)")
+     d("  /ip panel          -  show sample panel data (use /ip, not /incha)")
+     d("  /ip inst           -  animate instability head icon")
+     d("  /ip border         -  flash CA border")
+@@ -382,6 +384,25 @@ local function handleSlash(text)
+         Panel.refresh()
+         d("|cFFD700[Incha]|r Overlay position reset")
+ 
++    elseif cmd == "hp" then
++        -- Measure hmHealthThreshold in one pull: the pool is what
++        -- BossRegistry:detectDifficulty compares against, and it cannot be
++        -- read from a log file.
++        d(ADDON_TAG .. " boss slot health pools:")
++        for _, slot in ipairs({ "boss1", "boss2", "boss3", "boss4" }) do
++            if DoesUnitExist(slot) then
++                local cur, max, eMax = GetUnitPower(slot, POWERTYPE_HEALTH)
++                cur, max, eMax = tonumber(cur) or 0, tonumber(max) or 0,
++                    tonumber(eMax) or 0
++                d(string.format("  %s  %-24s max=%d  effectiveMax=%d  %.1f%%",
++                    slot, tostring(GetUnitName(slot)), max, eMax,
++                    max > 0 and (cur / max * 100) or 0))
++            else
++                d("  " .. slot .. "  (empty)")
++            end
++        end
++        d("  set hmHealthThreshold between the normal and hardmode values.")
++
+     elseif cmd == "preview" then
+         local sub = arg:match("^%s*(%S*)")
+         if     sub == "panel"  then Preview.showPanel()
+-- 
+2.54.0
+

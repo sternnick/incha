@@ -1,0 +1,178 @@
+From 608812f92743f5c38c2216b3cbcd470c6856f55a Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] fix(core): track which boss slot the active boss occupies;
+ clear stale alerts
+
+Three one-file-apart defects in the single-active-boss branch:
+
+1. EventPipeline forwards unitTag but Trial dropped it, and the health poll
+   and the HM threshold read a literal "boss1". With two units in slots
+   (Ryelaz+Zilyesset, Lylanar+Turlassil) the overlay can show the wrong
+   percentage and detect difficulty off the wrong pool. context.bossUnitTag
+   now carries the matched slot, mechanics use it (Falgravn's header), and
+   power ticks from other slots are ignored.
+2. onBossesChanged never cleared the AlertSink on a boss-to-boss change, so
+   the previous boss's info/action lines stayed visible.
+
+Position-only detection (KA) keeps working: bossSlot stays nil when the slot
+cannot be resolved by name, and every read falls back to "boss1".
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-02, F-03, F-07).
+Verification: static analysis only - not run in-game.
+---
+ core/Trial.lua             | 41 +++++++++++++++++++++++++++++++++-----
+ core/TrialContext.lua      |  8 +++++++-
+ trial/ka/boss/Falgravn.lua | 10 ++++++++--
+ 3 files changed, 51 insertions(+), 8 deletions(-)
+
+diff --git a/core/Trial.lua b/core/Trial.lua
+index c22d383..bfaa7fb 100644
+--- a/core/Trial.lua
++++ b/core/Trial.lua
+@@ -7,6 +7,9 @@ local Throttle     = require("lib.Throttle")
+ local TrialContext = require("core.TrialContext")
+ local BridgeBase   = require("core.Bridge")
+ 
++-- Unit tags occupied by trial bosses (nameplate slots, engine order).
++local BOSS_SLOTS   = { "boss1", "boss2", "boss3", "boss4" }
++
+ local Trial = {}
+ Trial.__index = Trial
+ 
+@@ -69,7 +72,7 @@ function Trial.create(options)
+             self:onBossesChanged(forceReset)
+         end,
+         onPowerUpdate = function(eventCode, unitTag, powerIndex, powerType, powerValue, powerMax, powerEffectiveMax)
+-            self:onPowerUpdate(powerValue, powerMax)
++            self:onPowerUpdate(unitTag, powerValue, powerMax)
+         end,
+         -- Always registered  -  Trial:onCombatState delegates to the active boss
+         -- if it has the callback, so no trial-level conditional is needed.
+@@ -115,30 +118,49 @@ function Trial:onBossesChanged(forceReset)
+ 
+     local _, x, y, z = GetUnitWorldPosition("player")
+     local bossClass = self.registry:findAtPosition(x, y, z)
++    local bossSlot  = nil   -- which boss1..boss4 tag the match came from
+ 
+     -- Fallback: name-based detection for trials whose bosses carry a `name`
+     -- field instead of (or in addition to) a location bounding box.
+     -- Check boss1-boss4 so concurrent-boss encounters (e.g. Ryelaz+Zilyesset)
+     -- are detected correctly regardless of which slot the engine assigns first.
+     if not bossClass then
+-        for _, slot in ipairs({"boss1", "boss2", "boss3", "boss4"}) do
++        for _, slot in ipairs(BOSS_SLOTS) do
+             if DoesUnitExist(slot) then
+                 local candidate = self.registry:findByName(GetUnitName(slot))
+                 if candidate then
+                     bossClass = candidate
++                    bossSlot  = slot
+                     break
+                 end
+             end
+         end
++    else
++        -- Position match: resolve which slot this boss actually occupies so the
++        -- health poll and the power-update guard use the same unit.
++        for _, slot in ipairs(BOSS_SLOTS) do
++            if DoesUnitExist(slot)
++               and self.registry:findByName(GetUnitName(slot)) == bossClass then
++                bossSlot = slot
++                break
++            end
++        end
+     end
+ 
+     if bossClass then
+         -- Create a fresh instance  -  no state carried over from previous pulls.
+         local instance = bossClass.new()
+         self.activeBoss = instance
+-        self.context:setBoss(instance)
++        self.context:setBoss(instance, bossSlot)
+ 
+-        local _, _, effectiveMax = GetUnitPower("boss1", POWERTYPE_HEALTH)
++        -- Info/action lines from the previous boss must not survive the
++        -- transition: on a boss-to-boss change nothing else clears them, so the
++        -- panel keeps the dead boss's timers until the new boss overwrites each
++        -- line - or forever, for lines the new boss never writes.
++        self.alerts:clear()
++
++        local _, _, effectiveMax =
++            GetUnitPower(bossSlot or "boss1", POWERTYPE_HEALTH)
+         self.context:setDifficulty(self.registry:detectDifficulty(bossClass, effectiveMax))
+ 
+         if instance.onEnter then
+@@ -155,10 +177,19 @@ function Trial:onBossesChanged(forceReset)
+     end
+ end
+ 
+-function Trial:onPowerUpdate(powerValue, powerMax)
++function Trial:onPowerUpdate(unitTag, powerValue, powerMax)
+     if not self.enabled then
+         return
+     end
++
++    -- Only the tracked boss drives the overlay. Concurrent encounters put two
++    -- units into boss slots at once (Ryelaz + Zilyesset in LC, Lylanar +
++    -- Turlassil in DSR); without this guard the wrong unit's percentage feeds
++    -- health rules and every timer keyed on a % window.
++    local tracked = self.context.bossUnitTag
++    if tracked and unitTag ~= tracked then
++        return
++    end
+     -- powerMax can be 0 briefly during boss transitions; skip the tick to
+     -- avoid a divide-by-zero producing nan in health rules.
+     if powerMax == 0 then
+diff --git a/core/TrialContext.lua b/core/TrialContext.lua
+index 113b1c7..ecc54aa 100644
+--- a/core/TrialContext.lua
++++ b/core/TrialContext.lua
+@@ -11,12 +11,18 @@ function TrialContext.new(trialId)
+         difficulty    = Difficulty.NONE,
+         isHM          = false,   -- pre-computed; kept in sync with difficulty
+         stage         = 1,
++        -- boss1..boss4 tag the active boss occupies (nil = unknown). Mechanics
++        -- that name or poll the boss must use this, not a literal "boss1".
++        bossUnitTag   = nil,
+         inCombat      = false,
+         healthPercent = 0,
+     }, TrialContext)
+ end
+ 
+-function TrialContext:setBoss(boss)
++--- @param boss    table|nil  active boss instance (nil = no boss)
++--- @param unitTag string|nil boss1..boss4 tag it was matched on (nil = unknown)
++function TrialContext:setBoss(boss, unitTag)
++    self.bossUnitTag = boss and unitTag or nil
+     if boss then
+         self.bossId = boss.id
+         self.bossKey = boss.key
+diff --git a/trial/ka/boss/Falgravn.lua b/trial/ka/boss/Falgravn.lua
+index 97b0c2e..e5f4c11 100644
+--- a/trial/ka/boss/Falgravn.lua
++++ b/trial/ka/boss/Falgravn.lua
+@@ -462,13 +462,19 @@ local function handleInfuserBuff(self, context, alerts, abilityId, ...)
+     CA.alert(nil, "Infuser Buff passed!", 0xFF8800FF, SOUNDS.DUEL_START, 3000)
+ end
+ 
++--- Header name for the unit we actually tracked (F-02/F-03): "boss1" is only
++--- correct while Falgravn is the first occupied slot.
++local function bossName(context)
++    return GetUnitName(context.bossUnitTag or "boss1")
++end
++
+ -- HM confirmation ability (plain entry: receives result).
+ local function handleFalgravnHm(self, context, alerts, result, abilityId, ...)
+     if result == ACTION_RESULT_EFFECT_GAINED then
+         self.bHM = true
+-        alerts:showHeader(GetUnitName("boss1") .. " [HM: ON]")
++        alerts:showHeader(bossName(context) .. " [HM: ON]")
+     elseif result == ACTION_RESULT_EFFECT_FADED then
+-        alerts:showHeader(GetUnitName("boss1"))
++        alerts:showHeader(bossName(context))
+         zo_callLater(function()
+             if not IsUnitInCombat("player") then self.bHM = false end
+         end, 2000)
+-- 
+2.54.0
+

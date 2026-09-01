@@ -1,0 +1,123 @@
+From 508f077b5af149b9084d29064b105e4bcc3b7847 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] fix: strip UTF-8 BOM from 9 encounter modules
+
+A BOM is not part of Lua's grammar. Lua's own command-line loader skips a
+leading BOM, but an embedded loader that hands the raw file body to
+lua_load()/luaL_loadstring() can fail at 1:1 instead. If ESO's loader does
+that, the nine files below never register and the require() from
+bootstrap.lua:29-33 raises "module not registered" for the AS, CR, LC and
+OC Factories - those four trials load dead with no visible error beyond a
+chat line.
+
+Byte-level change only: 3 bytes removed at offset 0 of each file.
+Gate: tools/static_checks.py (also added by feature/ci-static-validation).
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-01).
+Verification: static analysis only - not run in-game.
+---
+ trial/as/boss/OlmsEncounter.lua     | 2 +-
+ trial/cr/boss/ZmajaEncounter.lua    | 2 +-
+ trial/lc/boss/DarielEncounter.lua   | 2 +-
+ trial/lc/boss/OrphicEncounter.lua   | 2 +-
+ trial/lc/boss/RyelazEncounter.lua   | 2 +-
+ trial/lc/boss/XorynEncounter.lua    | 2 +-
+ trial/lc/boss/XynizataEncounter.lua | 2 +-
+ trial/oc/boss/KazpianEncounter.lua  | 2 +-
+ trial/oc/boss/ShaperEncounter.lua   | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/trial/as/boss/OlmsEncounter.lua b/trial/as/boss/OlmsEncounter.lua
+index d985b66..6fbb791 100644
+--- a/trial/as/boss/OlmsEncounter.lua
++++ b/trial/as/boss/OlmsEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA       = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+diff --git a/trial/cr/boss/ZmajaEncounter.lua b/trial/cr/boss/ZmajaEncounter.lua
+index a649ab0..2f66d6a 100644
+--- a/trial/cr/boss/ZmajaEncounter.lua
++++ b/trial/cr/boss/ZmajaEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+diff --git a/trial/lc/boss/DarielEncounter.lua b/trial/lc/boss/DarielEncounter.lua
+index 83b3795..a37d0e5 100644
+--- a/trial/lc/boss/DarielEncounter.lua
++++ b/trial/lc/boss/DarielEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿
++
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+ local CastDur = require("lib.CastDur")
+diff --git a/trial/lc/boss/OrphicEncounter.lua b/trial/lc/boss/OrphicEncounter.lua
+index cdf0095..7953653 100644
+--- a/trial/lc/boss/OrphicEncounter.lua
++++ b/trial/lc/boss/OrphicEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+diff --git a/trial/lc/boss/RyelazEncounter.lua b/trial/lc/boss/RyelazEncounter.lua
+index 7a338a5..1e1e4a0 100644
+--- a/trial/lc/boss/RyelazEncounter.lua
++++ b/trial/lc/boss/RyelazEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿
++
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+ local CastDur = require("lib.CastDur")
+diff --git a/trial/lc/boss/XorynEncounter.lua b/trial/lc/boss/XorynEncounter.lua
+index e035ce9..6c1b537 100644
+--- a/trial/lc/boss/XorynEncounter.lua
++++ b/trial/lc/boss/XorynEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+diff --git a/trial/lc/boss/XynizataEncounter.lua b/trial/lc/boss/XynizataEncounter.lua
+index 5707955..5a3407a 100644
+--- a/trial/lc/boss/XynizataEncounter.lua
++++ b/trial/lc/boss/XynizataEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA = require("lib.CA")
+ local BossBase = require("lib.BossBase")
+diff --git a/trial/oc/boss/KazpianEncounter.lua b/trial/oc/boss/KazpianEncounter.lua
+index 74c2317..f3d390a 100644
+--- a/trial/oc/boss/KazpianEncounter.lua
++++ b/trial/oc/boss/KazpianEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿local Timer    = require("lib.Timer")
++local Timer    = require("lib.Timer")
+ 
+ local CA               = require("lib.CA")
+ local BossBase         = require("lib.BossBase")
+diff --git a/trial/oc/boss/ShaperEncounter.lua b/trial/oc/boss/ShaperEncounter.lua
+index e1a8f40..8373d14 100644
+--- a/trial/oc/boss/ShaperEncounter.lua
++++ b/trial/oc/boss/ShaperEncounter.lua
+@@ -1,4 +1,4 @@
+-﻿
++
+ local CA               = require("lib.CA")
+ local BossBase         = require("lib.BossBase")
+ local CastDur          = require("lib.CastDur")
+-- 
+2.54.0
+

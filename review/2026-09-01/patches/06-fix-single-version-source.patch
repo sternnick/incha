@@ -1,0 +1,75 @@
+From bb224b57d8253ad74b3c1961391e56cdac9ec636 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] fix: one version constant, and make the manifest agree with
+ it
+
+incha.txt says 0.0.1 while ui/Menu.lua:24 and the chat load line
+incha.lua:51 both say 0.1.0,
+so the in-game addon list, the LAM panel and any bug report disagreed. The
+manifest cannot read Lua, so it stays a literal - the constant at least
+removes one of the two Lua copies.
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-17).
+Verification: static analysis only - not run in-game.
+---
+ bootstrap.lua | 1 +
+ incha.lua     | 3 ++-
+ incha.txt     | 2 +-
+ ui/Menu.lua   | 2 +-
+ 4 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/bootstrap.lua b/bootstrap.lua
+index 89ba997..895b65e 100644
+--- a/bootstrap.lua
++++ b/bootstrap.lua
+@@ -19,6 +19,7 @@ ADDON_NAME   = _n                -- folder name  -  matches EVENT_ADD_ON_LOADED
+ ADDON_TITLE  = _t                -- display name  -  "Incha"
+ ADDON_TAG    = "|cFFD700[" .. _t .. "]|r"  -- coloured chat prefix  -  "[Incha]"
+ ADDON_SLASH  = "/" .. _n         -- slash command  -  "/incha"
++ADDON_VERSION = "0.1.0"         -- single source of truth (README badge, LAM, chat)
+ ADDON_SV     = _t .. "_SV"      -- SavedVariables key  -  "Incha_SV"
+ ADDON_PREFIX = _t .. "_"        -- event/handler name prefix  -  "Incha_"
+ ADDON_LAM    = _t .. "Settings"  -- LibAddonMenu panel ID  -  "InchaSettings"
+diff --git a/incha.lua b/incha.lua
+index 0977258..2207eae 100644
+--- a/incha.lua
++++ b/incha.lua
+@@ -48,7 +48,8 @@ local function OnAddOnLoaded(event, addonName)
+ 
+     ZoneManager.onZoneChanged()
+ 
+-    d(ADDON_TAG .. " v0.1.0 loaded  -  " .. ADDON_SLASH .. " for commands")
++    d(ADDON_TAG .. " v" .. ADDON_VERSION .. " loaded  -  " .. ADDON_SLASH
++      .. " for commands")
+ end
+ 
+ EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)
+diff --git a/incha.txt b/incha.txt
+index 437f175..1c78eff 100644
+--- a/incha.txt
++++ b/incha.txt
+@@ -1,6 +1,6 @@
+ ## Title: Incha
+ ## Description: Trial helper — mechanics overlay for KA, SS, RG, DSR, AS, CR, SE, LC, OC
+-## Version: 0.0.1
++## Version: 0.1.0
+ ## Author: Oseias
+ ## APIVersion: 101042
+ ## SavedVariables: Incha_SV
+diff --git a/ui/Menu.lua b/ui/Menu.lua
+index 1d903b8..22f2b54 100644
+--- a/ui/Menu.lua
++++ b/ui/Menu.lua
+@@ -21,7 +21,7 @@ local PANEL = {
+     name                = ADDON_TITLE,
+     displayName         = "|cFFD700" .. ADDON_TITLE .. "|r",
+     author              = "Oseias",
+-    version             = "0.1.0",
++    version             = ADDON_VERSION,
+     slashCommand        = ADDON_SLASH,
+     registerForRefresh  = false,
+     registerForDefaults = false,
+-- 
+2.54.0
+

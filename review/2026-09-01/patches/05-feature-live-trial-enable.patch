@@ -1,0 +1,209 @@
+From 4b394e668286fcc03996ddd43589205bd7eb4770 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] feature: apply per-trial Enable immediately; add the missing
+ KA checkbox
+
+ZoneManager read .enabled only inside enableTrialForZone(), which runs on
+EVENT_PLAYER_ACTIVATED. Ticking a trial off mid-pull therefore changed
+nothing until the player left the zone. refresh() re-reads settings for the
+current zone and enables/disables the active trial; all nine Enable rows now
+call it.
+
+KA had no Enable row at all (Settings.DEFAULTS.trials.ka.enabled exists and
+ZoneManager honours it, but the panel never exposed it) - added for parity.
+
+incha.txt: core/ZoneManager.lua moves above ui/Menu.lua, because Menu now
+requires it and the loader resolves requires in manifest order (C-03 in
+.review/checks.py guards that ordering).
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-09, F-24).
+Verification: static analysis only - not run in-game.
+---
+ core/ZoneManager.lua | 23 +++++++++++++++++++
+ incha.txt            |  2 +-
+ ui/Menu.lua          | 53 ++++++++++++++++++++++++++++++++++++--------
+ 3 files changed, 68 insertions(+), 10 deletions(-)
+
+diff --git a/core/ZoneManager.lua b/core/ZoneManager.lua
+index 15c3c42..71fac41 100644
+--- a/core/ZoneManager.lua
++++ b/core/ZoneManager.lua
+@@ -77,6 +77,29 @@ function ZoneManager.onZoneChanged()
+     enableTrialForZone(getPlayerZoneId())
+ end
+ 
++--- Re-evaluate the zone the player is standing in against current settings.
++--- Called from the per-trial Enable checkboxes so a toggle takes effect
++--- immediately; until now .enabled was only consulted at zone-enter time,
++--- which meant the checkbox did nothing until you left and re-entered the
++--- trial (or reloaded the UI).
++function ZoneManager.refresh()
++    local zoneId = getPlayerZoneId()
++    local entry  = trials[zoneId]
++    if not entry then
++        return
++    end
++
++    local sv  = Settings.get()
++    local tsv = sv and entry.trialId and sv.trials[entry.trialId]
++    local wanted = not (tsv and tsv.enabled == false)
++
++    if not wanted and activeTrial == entry.module then
++        disableCurrentTrial()
++    elseif wanted and activeTrial ~= entry.module then
++        enableTrialForZone(zoneId)
++    end
++end
++
+ function ZoneManager.getActiveZoneId()
+     return activeZoneId
+ end
+diff --git a/incha.txt b/incha.txt
+index 437f175..b4dbb6c 100644
+--- a/incha.txt
++++ b/incha.txt
+@@ -28,12 +28,12 @@ core/Settings.lua
+ core/ModuleLoader.lua
+ core/CombatHandler.lua
+ core/Bridge.lua
++core/ZoneManager.lua
+ 
+ ui/Panel.lua
+ ui/Preview.lua
+ ui/Menu.lua
+ core/Trial.lua
+-core/ZoneManager.lua
+ 
+ trial/ka/boss/Yandir.lua
+ trial/ka/boss/Vrol.lua
+diff --git a/ui/Menu.lua b/ui/Menu.lua
+index 1d903b8..87ac6aa 100644
+--- a/ui/Menu.lua
++++ b/ui/Menu.lua
+@@ -9,7 +9,8 @@
+ local Log      = require("lib.Log")
+ local Panel    = require("ui.Panel")
+ local Preview  = require("ui.Preview")
+-local Settings = require("core.Settings")
++local Settings    = require("core.Settings")
++local ZoneManager = require("core.ZoneManager")
+ 
+ local Menu = {}
+ 
+@@ -84,6 +85,16 @@ local OPTIONS = {
+         type = "header",
+         name = "Kyne's Aegis",
+     },
++    {
++        type    = "checkbox",
++        name    = "Enable",
++        tooltip = "Track Yandir/Vrol/Falgravn mechanics and the overlay for this trial.",
++        getFunc = function() return Settings.get().trials.ka.enabled end,
++        setFunc = function(v)
++            Settings.get().trials.ka.enabled = v
++            ZoneManager.refresh()
++        end,
++    },
+     {
+         type    = "checkbox",
+         name    = "Show boss panel",
+@@ -123,7 +134,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track Lokke laser/tomb timers, Yolna/Nahvii mechanics, and shared-add alerts.",
+         getFunc = function() return Settings.get().trials.ss.enabled end,
+-        setFunc = function(v) Settings.get().trials.ss.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.ss.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -142,7 +156,10 @@ local OPTIONS = {
+         type    = "checkbox",
+         name    = "Enable",
+         getFunc = function() return Settings.get().trials.rg.enabled end,
+-        setFunc = function(v) Settings.get().trials.rg.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.rg.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -161,7 +178,10 @@ local OPTIONS = {
+         type    = "checkbox",
+         name    = "Enable",
+         getFunc = function() return Settings.get().trials.dsr.enabled end,
+-        setFunc = function(v) Settings.get().trials.dsr.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.dsr.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -181,7 +201,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track Olms timers, Llothis/Felms dormant state, and Protector shield.",
+         getFunc = function() return Settings.get().trials.as.enabled end,
+-        setFunc = function(v) Settings.get().trials.as.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.as.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -208,7 +231,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track mini-boss timers (Siroria/Relequen/Galenwe), portal countdown, and Z'Maja mechanics.",
+         getFunc = function() return Settings.get().trials.cr.enabled end,
+-        setFunc = function(v) Settings.get().trials.cr.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.cr.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -235,7 +261,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track Yaseyla bomb timers, Chimera despawn/chain lightning, and Ansuul calamity/phase alerts.",
+         getFunc = function() return Settings.get().trials.se.enabled end,
+-        setFunc = function(v) Settings.get().trials.se.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.se.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -262,7 +291,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track side assignment (Ryelaz/Zilyesset), Orphic Xoryn jump/cone timers, Xynizata interrupt CDs, and Xoryn current/knot alerts.",
+         getFunc = function() return Settings.get().trials.lc.enabled end,
+-        setFunc = function(v) Settings.get().trials.lc.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.lc.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+@@ -282,7 +314,10 @@ local OPTIONS = {
+         name    = "Enable",
+         tooltip = "Track Jynorah dragon leap/clash phases, Kazpian chain/portal/channeler alerts, and Shaper of Flesh shield status.",
+         getFunc = function() return Settings.get().trials.oc.enabled end,
+-        setFunc = function(v) Settings.get().trials.oc.enabled = v end,
++        setFunc = function(v)
++            Settings.get().trials.oc.enabled = v
++            ZoneManager.refresh()
++        end,
+     },
+     {
+         type    = "checkbox",
+-- 
+2.54.0
+

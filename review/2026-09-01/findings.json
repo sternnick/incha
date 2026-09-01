@@ -1,0 +1,137 @@
+{
+  "repo": "/tmp/incha-publish",
+  "results": [
+    {
+      "check": "C-01 BOM",
+      "status": "FAIL",
+      "message": "9 source files start with a UTF-8 BOM (EF BB BF). A BOM is not part of Lua's grammar; ESO compiles the file body itself, so if its loader does not skip those 3 bytes the file fails to parse at 1:1 and the module never registers.",
+      "where": "trial/as/boss/OlmsEncounter.lua, trial/cr/boss/ZmajaEncounter.lua, trial/lc/boss/DarielEncounter.lua, trial/lc/boss/OrphicEncounter.lua, trial/lc/boss/RyelazEncounter.lua, trial/lc/boss/XorynEncounter.lua, trial/lc/boss/XynizataEncounter.lua, trial/oc/boss/KazpianEncounter.lua, trial/oc/boss/ShaperEncounter.lua"
+    },
+    {
+      "check": "C-02 manifest",
+      "status": "PASS",
+      "message": "all 65 addon files are listed exactly once",
+      "where": ""
+    },
+    {
+      "check": "C-03 load order",
+      "status": "PASS",
+      "message": "every require() target appears before its consumer in incha.txt",
+      "where": ""
+    },
+    {
+      "check": "C-04 registration",
+      "status": "PASS",
+      "message": "each module registers exactly its path-derived module name",
+      "where": ""
+    },
+    {
+      "check": "C-05 route signatures",
+      "status": "PASS",
+      "message": "370 route entries agree with the CombatHandler dispatch convention (the Jynorah P0 bug class has not recurred)",
+      "where": ""
+    },
+    {
+      "check": "C-06 unread settings",
+      "status": "FAIL",
+      "message": "settings keys exposed in the LAM panel but never read by any consumer: showBossUI",
+      "where": "core/Settings.lua DEFAULTS.trials + ui/Menu.lua checkboxes"
+    },
+    {
+      "check": "C-07 HM thresholds",
+      "status": "WARN",
+      "message": "7 bosses use math.huge (detectDifficulty can never return HARDMODE) and 5 use the 100000001 placeholder: trial/as/boss/OlmsEncounter.lua, trial/cr/boss/ZmajaEncounter.lua, trial/dsr/boss/Lylanar.lua, trial/dsr/boss/ReefGuardian.lua, trial/dsr/boss/Taleria.lua, trial/lc/boss/DarielEncounter.lua, trial/lc/boss/XynizataEncounter.lua, trial/oc/boss/JynorahEncounter.lua, trial/oc/boss/KazpianEncounter.lua, trial/oc/boss/ShaperEncounter.lua, trial/rg/boss/Bahsei.lua, trial/rg/boss/Xalvakka.lua",
+      "where": "BossRegistry:detectDifficulty, core/BossRegistry.lua:61-71"
+    },
+    {
+      "check": "C-08 proximity scale",
+      "status": "WARN",
+      "message": "lib/MapUtils.isGroupMemberNearby now measures GetUnitWorldPosition units, but these call-sites still pass pre-rewrite values, so the alert can never fire: trial/ss/boss/Lokke.lua:230 uses 4.5; trial/ss/boss/Nahvii.lua:173 uses 7; trial/ss/boss/Yolna.lua:106 uses 2.8",
+      "where": "lib/MapUtils.lua:5-17"
+    },
+    {
+      "check": "C-09 nil stateSchema",
+      "status": "NOTE",
+      "message": "`key = nil` inside a table constructor stores nothing, so BossBase.fromSchema cannot create these fields \u2014 the entries are documentation only: trial/oc/boss/JynorahEncounter.lua:78 playerCurse; trial/oc/boss/KazpianEncounter.lua:66 chainedA; trial/oc/boss/KazpianEncounter.lua:67 chainedB; trial/rg/boss/Oaxiltso.lua:62 sludgeTracker1Tag; trial/rg/boss/Oaxiltso.lua:63 sludgeTracker1Name",
+      "where": ""
+    },
+    {
+      "check": "C-10 version",
+      "status": "NOTE",
+      "message": "manifest declares ## Version: 0.0.1 while these report something else: {'incha.lua': ['0.1.0'], 'ui/Menu.lua': ['0.1.0']}",
+      "where": ""
+    },
+    {
+      "check": "C-14 control names",
+      "status": "WARN",
+      "message": "ESO only lets an addon create global controls whose names start with the addon's own name; these do not: ui/Panel.lua:80 'InchPanel'",
+      "where": "ADDON_NAME/ADDON_TITLE come from bootstrap.lua:16-19 (folder 'incha', title 'Incha')"
+    },
+    {
+      "check": "C-15 panel caches",
+      "status": "FAIL",
+      "message": "hideAction clears the control but not the cached string, so the next identical action text is diffed away and never re-drawn (compare action handler at ui/Panel.lua:205-207): see ui/Panel.lua:215",
+      "where": ""
+    },
+    {
+      "check": "C-17 unrouted ability ids",
+      "status": "WARN",
+      "message": "16 declared ability IDs appear nowhere else in their file: the mechanic is documented but never routed, so no alert can ever fire for it. Either route them or move them to the ROADMAP backlog:",
+      "where": "trial/cr/boss/ZmajaEncounter.lua:67 GALE_HOARFROST_AO ids 103765; trial/cr/boss/ZmajaEncounter.lua:96 BEAD_TICK ids 105339; trial/cr/boss/ZmajaEncounter.lua:97 BEAD_SPAWN ids 105363; trial/cr/boss/ZmajaEncounter.lua:98 BEAD_CHARGE ids 105373; trial/cr/boss/ZmajaEncounter.lua:100 BREAK_AMULET ids 106023; trial/cr/boss/ZmajaEncounter.lua:101 MALICIOUS_SPHERE ids 105291; trial/dsr/boss/Lylanar.lua:61 PRE_FIREBRAND ids 166355; trial/dsr/boss/Lylanar.lua:77 PRE_FROSTBRAND ids 166364; trial/dsr/boss/ReefGuardian.lua:28 ACID_POOL ids 165987; trial/dsr/boss/Taleria.lua:47 NEMATOCYST_P ids 174679; trial/dsr/boss/Taleria.lua:48 NEMATOCYST_AOE ids 169938; trial/dsr/boss/Taleria.lua:49 SWELTERING_P ids 174689; trial/dsr/boss/Taleria.lua:50 SWELTERING_AOE ids 169936; trial/dsr/boss/Taleria.lua:51 SUFFOCATING_P ids 174691; trial/dsr/boss/Taleria.lua:52 SUFFOCATING_AOE ids 169935; trial/se/boss/YaseylaEncounter.lua:45 ARCHER_TRUE_SHOT ids 184802"
+    },
+    {
+      "check": "C-17b unused constants",
+      "status": "NOTE",
+      "message": "23 unused locals: 7 ID sets that duplicate inline literals (cleanup), 16 tuning/colour constants (7 of the *_FIRST_CD group are measured first-pull cooldowns that are never wired to Timer:reset): trial/cr/boss/ZmajaEncounter.lua:9 SIRO_IDS (all 6 ids routed inline); trial/cr/boss/ZmajaEncounter.lua:17 RELE_IDS (all 6 ids routed inline); trial/cr/boss/ZmajaEncounter.lua:25 GALE_IDS (all 10 ids routed inline); trial/ka/boss/Falgravn.lua:14 ICON_INSTABILITY (all 1 ids routed inline); trial/rg/boss/Bahsei.lua:38 MT_ATTACK_IDS (all 3 ids routed inline); trial/rg/boss/Xalvakka.lua:51 SCATHING_IDS (all 3 ids routed inline); trial/rg/boss/Xalvakka.lua:52 DEADSTAR_IDS (all 2 ids routed inline); trial/as/boss/OlmsEncounter.lua:34 DORMANT_CD; trial/cr/boss/ZmajaEncounter.lua:112 HOARFROST_DROP; trial/cr/boss/ZmajaEncounter.lua:114 COMET_WINDOW; trial/lc/boss/OrphicEncounter.lua:17 THRALL_FIRST_CD; trial/lc/boss/OrphicEncounter.lua:19 FLOOD_FIRST_CD; trial/lc/boss/XynizataEncounter.lua:12 BEAM_FIRST_CD; trial/lc/boss/XynizataEncounter.lua:14 VITRIFY_FIRST_CD; trial/oc/boss/JynorahEncounter.lua:44 LEAP_IDS; trial/oc/boss/JynorahEncounter.lua:50 LEAP_FIRST_CD; trial/se/boss/AnsuulEncounter.lua:39 COL_GREEN; trial/se/boss/AnsuulEncounter.lua:40 COL_RED; trial/se/boss/YaseylaEncounter.lua:48 FIREBOMB_FIRST_CD; trial/se/boss/YaseylaEncounter.lua:53 FROST_FIRST_CD; trial/se/boss/YaseylaEncounter.lua:58 COL_ICE; trial/se/boss/YaseylaEncounter.lua:59 COL_ELEC; trial/ss/boss/Nahvii.lua:51 COL_THRASH",
+      "where": ""
+    },
+    {
+      "check": "C-18 isHM gates",
+      "status": "WARN",
+      "message": "boss modules branch on context.isHM while their threshold is a placeholder, so those branches are driven by an unmeasured boundary (may mis-detect in either direction): trial/dsr/boss/Lylanar.lua (threshold 100000001): 16 gates at lines 41, 224, 261, 411, 425, 497, 499, 518, 520, 554, 564, 615 \u2026 | trial/dsr/boss/Taleria.lua (threshold 100000001): 5 gates at lines 300, 301, 392, 392, 394 | trial/rg/boss/Bahsei.lua (threshold 100000001): 14 gates at lines 26, 122, 193, 295, 296, 316, 325, 339, 340, 357, 357, 359 \u2026 | trial/rg/boss/Xalvakka.lua (threshold 100000001): 7 gates at lines 32, 194, 269, 270, 338, 338, 339",
+      "where": ""
+    },
+    {
+      "check": "C-19 CA bar handles",
+      "status": "WARN",
+      "message": "CA.castAlertsStart returns an id used to stop the bar early; these call sites discard it, so the bar cannot be cancelled on wipe or zone exit and will keep running for its full duration: trial/dsr/DreadsailCommon.lua:111, trial/dsr/DreadsailCommon.lua:121, trial/ka/boss/Falgravn.lua:515, trial/rg/RockgroveCommon.lua:108, trial/rg/RockgroveCommon.lua:116, trial/rg/boss/Oaxiltso.lua:106 (CA.alertCast is a one-shot bar and is fine)",
+      "where": ""
+    },
+    {
+      "check": "C-20 zo_callLater handles",
+      "status": "NOTE",
+      "message": "deferred callbacks whose handle is discarded cannot be cancelled by onWipe/onLeave; each must only touch state it re-checks itself: trial/dsr/boss/Lylanar.lua:289, trial/dsr/boss/Lylanar.lua:306, trial/dsr/boss/ReefGuardian.lua:120, trial/ka/boss/Falgravn.lua:399, trial/ka/boss/Falgravn.lua:472, trial/ka/boss/Vrol.lua:69, trial/ss/boss/Lokke.lua:89, ui/Menu.lua:415",
+      "where": ""
+    },
+    {
+      "check": "C-21 forward references",
+      "status": "PASS",
+      "message": "no call site precedes its `local function` declaration (Lua would bind nil there)",
+      "where": ""
+    },
+    {
+      "check": "C-22 harness parity",
+      "status": "PASS",
+      "message": "all 9 zones and every boss order in test/run_log.lua match the Factories",
+      "where": ""
+    },
+    {
+      "check": "C-11 doc drift",
+      "status": "NOTE",
+      "message": "README.md documents trial/<id>/Dispatcher.lua, a layer the history shows was removed (commit 'refactor: remove Dispatcher layer') | README.md marks AS/CR/SE/LC/OC as 'Planned' although those trees contain fully routed boss modules (e.g. trial/cr/boss/ZmajaEncounter.lua is 637 lines with 43 combatRoutes) | ROADMAP.md states files were 're-saved as UTF-8 without BOM' while 9 of them still have one | ROADMAP.md 'Open architecture questions' #1 still describes the core -> ui.Bridge inversion that has since been fixed (core/Bridge.lua exists, ui/Bridge.lua does not) | ROADMAP.md still shows 'zoneId = TBD' for CR/LC/OC while incha.lua registers them (cr=1051, lc=1478, oc=1548) | ui/Panel.lua header comment says H=200 while the code uses local W, H = 320, 260",
+      "where": ""
+    },
+    {
+      "check": "C-13 syntax",
+      "status": "FAIL",
+      "message": "node:internal/modules/cjs/loader:1386\n  throw err;\n  ^\n\nError: Cannot find module 'luaparse'\nRequire stack:\n- /tmp/incha-publish/review/2026-09-01/syntax.js\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)\n    at Function._load (node:internal/modules/cjs/loader:1192:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\n    at Module.require (node:internal/modules/cjs/loader:1463:12)\n    at require (node:internal/modules/helpers:147:16)\n    at Object.<anonymous> (/tmp/incha-publish/review/2026-09-01/syntax.js:4:18)\n    at Module._compile (node:internal/modules/cjs/loader:1705:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [ '/tmp/incha-publish/review/2026-09-01/syntax.js' ]\n}\n\nNode.js v22.22.2",
+      "where": ""
+    },
+    {
+      "check": "C-16 git history",
+      "status": "NOTE",
+      "message": "203 commits, 57 of them merges; 42 messages appear more than once (the same change was committed twice and both commits were merged). Examples: docs: fix zone ID discovery command in ROADMAP; fix: use OR logic for hud/hudui scene visibility gate; fix: defer preview slash calls 200ms for HUD scene timing; docs: mark P0/P1 OC bugs fixed; correct Oaxiltso reference addon note; fix(oc): reset OsseinCageCommon module state on wipe",
+      "where": ""
+    }
+  ]
+}

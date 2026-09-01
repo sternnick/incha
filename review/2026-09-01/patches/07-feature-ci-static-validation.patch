@@ -1,0 +1,261 @@
+From 7169ca02d92dd1107f538a18def85eb9642ea958 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] feature: offline static validation (CI + pre-push BOM guard)
+
+The BOM regression in a4e2942 touched 9 files, was invisible in review, and
+is reproducible with three bytes of inspection. Same for the two other
+classes that silently break a trial: a file missing from incha.txt, and a
+require() whose target is listed later in the manifest (the loader resolves
+in manifest order and raises "module not registered").
+
+tools/static_checks.py is stdlib-only; tools/syntax_check.js is a luaparse
+smoke test (luaparse accepts a BOM, so it complements rather than replaces
+the encoding check). Both run in CI and the hook blocks a BOM at push time.
+
+Note the hook now accepts the encoding check even for the tarball case where
+no upstream rev is passed, and README:72 already documents core.hooksPath.
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-01, F-14, F-16).
+Verification: static analysis only - not run in-game.
+---
+ .githooks/pre-push                      |  20 ++++-
+ .github/workflows/static-validation.yml |  30 +++++++
+ tools/static_checks.py                  | 115 ++++++++++++++++++++++++
+ tools/syntax_check.js                   |  24 +++++
+ 4 files changed, 186 insertions(+), 3 deletions(-)
+ mode change 100644 => 100755 .githooks/pre-push
+ create mode 100644 .github/workflows/static-validation.yml
+ create mode 100644 tools/static_checks.py
+ create mode 100644 tools/syntax_check.js
+
+diff --git a/.githooks/pre-push b/.githooks/pre-push
+old mode 100644
+new mode 100755
+index 724b81c..82966b4
+--- a/.githooks/pre-push
++++ b/.githooks/pre-push
+@@ -1,12 +1,13 @@
+ #!/bin/sh
+-# Enforce branch naming: only feature/* or fix/* branches may be pushed.
+-# master is handled by GitHub branch protection.
++# Two push-time guards, both cheap and both offline:
++#   1. branch naming: feature/* or fix/* (master is handled by branch protection)
++#   2. encoding: a UTF-8 BOM in a .lua file can make ESO's loader reject the file
++#      at 1:1, which silently kills a whole trial (see 2026-09-01 review, F-01).
+ 
+ branch=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
+ 
+ case "$branch" in
+   feature/*|fix/*|master)
+-    exit 0
+     ;;
+   *)
+     echo "ERROR: Branch '$branch' does not match naming rules."
+@@ -14,3 +15,16 @@ case "$branch" in
+     exit 1
+     ;;
+ esac
++
++bad=$(git diff --name-only --diff-filter=ACM "$@" 2>/dev/null | grep '\.lua$')
++[ -z "$bad" ] && bad=$(git ls-files '*.lua')
++for f in $bad; do
++  [ -f "$f" ] || continue
++  if [ "$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; then
++    echo "ERROR: $f starts with a UTF-8 BOM - strip it:"
++    echo "       sed -i '1s/^\xEF\xBB\xBF//' $f"
++    exit 1
++  fi
++done
++
++exit 0
+diff --git a/.github/workflows/static-validation.yml b/.github/workflows/static-validation.yml
+new file mode 100644
+index 0000000..c5e6aa0
+--- /dev/null
++++ b/.github/workflows/static-validation.yml
+@@ -0,0 +1,30 @@
++name: static-validation
++
++on:
++  push:
++    branches: [master, "fix/*", "feature/*"]
++  pull_request:
++
++jobs:
++  static:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.x"
++      - name: encoding, manifest sync, load order, control names
++        run: python3 tools/static_checks.py
++
++  syntax:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: "20"
++      - name: parse every shipped Lua file
++        run: |
++          npm init -y >/dev/null 2>&1 || true
++          npm install --no-save luaparse@1.8.0
++          node tools/syntax_check.js
+diff --git a/tools/static_checks.py b/tools/static_checks.py
+new file mode 100644
+index 0000000..8f5c61e
+--- /dev/null
++++ b/tools/static_checks.py
+@@ -0,0 +1,115 @@
++#!/usr/bin/env python3
++"""Static validation for the Incha addon (stdlib only, no network).
++
++  python3 tools/static_checks.py            # exit 1 on any failure
++
++Checks, in the order a failure would bite a player:
++  1. encoding   - no UTF-8 BOM, no CRLF, no mojibake in any shipped file
++  2. manifest   - every .lua on disk is listed in incha.txt exactly once
++  3. load order - every require() target appears before its consumer
++  4. naming     - created global controls start with the addon name
++"""
++
++import os
++import re
++import sys
++
++ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++TEXT_SUFFIXES = (".lua", ".txt", ".md")
++FAILURES = []
++
++
++def rel_paths():
++    for base, dirs, files in os.walk(ROOT):
++        dirs[:] = [d for d in dirs if d not in (".git", ".github", "node_modules")]
++        for name in sorted(files):
++            if name.endswith(TEXT_SUFFIXES):
++                yield os.path.relpath(os.path.join(base, name), ROOT)
++
++
++def read_bytes(rel):
++    with open(os.path.join(ROOT, rel), "rb") as fh:
++        return fh.read()
++
++
++def fail(check, msg):
++    FAILURES.append("%s: %s" % (check, msg))
++
++
++def check_encoding():
++    for rel in rel_paths():
++        raw = read_bytes(rel)
++        if raw.startswith(b"\xef\xbb\xbf"):
++            fail("encoding", "%s starts with a UTF-8 BOM (3 bytes at offset 0)" % rel)
++        if b"\r\n" in raw:
++            fail("encoding", "%s contains CRLF line endings" % rel)
++        if b"\xef\xbf\xbd" in raw or b"\xc3\xa2\xc2\x80" in raw:
++            fail("encoding", "%s contains mojibake / replacement chars" % rel)
++
++
++def manifest_files():
++    with open(os.path.join(ROOT, "incha.txt"), encoding="utf-8") as fh:
++        return [ln.strip() for ln in fh
++                if ln.strip().endswith(".lua") and not ln.startswith("##")]
++
++
++def check_manifest():
++    listed = manifest_files()
++    on_disk = sorted(p.replace(os.sep, "/") for p in rel_paths()
++                     if p.endswith(".lua") and not p.startswith("test" + os.sep))
++    missing = sorted(set(on_disk) - set(listed))
++    ghost = sorted(set(listed) - set(on_disk))
++    dupes = sorted({p for p in listed if listed.count(p) > 1})
++    for m in missing:
++        fail("manifest", "%s exists on disk but is not in incha.txt (never loaded)" % m)
++    for g in ghost:
++        fail("manifest", "incha.txt lists %s which does not exist" % g)
++    for d in dupes:
++        fail("manifest", "%s is listed more than once" % d)
++
++
++def check_load_order():
++    order = {p: i for i, p in enumerate(manifest_files())}
++    bad = []
++    for rel, idx in order.items():
++        path = os.path.join(ROOT, rel)
++        if not os.path.exists(path):
++            continue
++        with open(path, encoding="utf-8", errors="replace") as fh:
++            src = fh.read()
++        for target in re.findall(r'require\("([^"]+)"\)', src):
++            t = target + ".lua"
++            if t in order and order[t] > idx:
++                bad.append("%s (line %d of manifest) requires %s listed later"
++                           % (rel, idx + 1, target))
++    for b in sorted(set(bad)):
++        fail("load order", b)
++
++
++def check_control_names():
++    for rel in rel_paths():
++        if not rel.endswith(".lua"):
++            continue
++        with open(os.path.join(ROOT, rel), encoding="utf-8", errors="replace") as fh:
++            src = fh.read()
++        for m in re.finditer(r'CreateControl\(\s*"([^"]+)"', src):
++            name = m.group(1)
++            if not name.lower().startswith("incha"):
++                line = src[:m.start()].count("\n") + 1
++                fail("naming", '%s:%d creates global control "%s" '
++                     '(must start with the addon name)' % (rel, line, name))
++
++
++def main():
++    check_encoding()
++    check_manifest()
++    check_load_order()
++    check_control_names()
++    for f in FAILURES:
++        print("FAIL " + f)
++    print("%s: %d failure(s)" % ("FAILED" if FAILURES else "OK", len(FAILURES)))
++    return 1 if FAILURES else 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/tools/syntax_check.js b/tools/syntax_check.js
+new file mode 100644
+index 0000000..a639d25
+--- /dev/null
++++ b/tools/syntax_check.js
+@@ -0,0 +1,24 @@
++// luaparse smoke test: every shipped .lua must parse.
++//   npm i luaparse && node tools/syntax_check.js
++const fs = require("fs");
++const path = require("path");
++const parser = require("luaparse");
++
++const root = path.join(__dirname, "..");
++const manifest = fs.readFileSync(path.join(root, "incha.txt"), "utf8")
++  .split("\n").map((l) => l.trim())
++  .filter((l) => l.endsWith(".lua") && !l.startsWith("##"));
++
++let bad = 0;
++for (const rel of manifest) {
++  const file = path.join(root, rel);
++  if (!fs.existsSync(file)) { console.log(`MISSING ${rel}`); bad++; continue; }
++  try {
++    parser.parse(fs.readFileSync(file, "utf8"), { luaVersion: "5.1" });
++  } catch (e) {
++    console.log(`SYNTAX FAIL ${rel} -> ${e.message}`);
++    bad++;
++  }
++}
++console.log(`files: ${manifest.length}  failures: ${bad}`);
++process.exit(bad ? 1 : 0);
+-- 
+2.54.0
+

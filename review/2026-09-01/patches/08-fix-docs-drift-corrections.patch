@@ -1,0 +1,136 @@
+From 98fa6f973421407f3521bdf474fddf2e9e437180 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH] fix(docs): correct status table, removed-module reference,
+ and zone IDs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+All read-only corrections, each cross-checked against the code:
+  * README listed AS/CR/SE/LC/OC as Planned although all nine trials are
+    registered in incha.lua:25-33 with 25 boss modules behind them.
+  * README's tree listed trial/<id>/Dispatcher.lua, which no longer exists;
+    routing lives in each boss module's combatRoutes/effectRoutes.
+  * README said the manifest requires the lowercase folder name; it is
+    ESO's own ADDON_NAME derivation, not the manifest.
+  * ROADMAP described the panel as info1–3; it renders 10 lines.
+  * ROADMAP still said zoneId = TBD for CR/LC/OC (1051/1478/1548, per
+    incha.lua and test/run_log.lua) and marked the sections Planned.
+  * test/README misnamed three zones: 1000 is Asylum Sanctorium, 1051 is
+    Cloudrest, 1548 is Ossein Cage (the code modules are OlmsEncounter,
+    ZmajaEncounter and OsseinCageCommon).
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-16, F-17).
+Verification: static analysis only - not run in-game.
+---
+ README.md      | 17 +++++++++--------
+ ROADMAP.md     |  9 +++++----
+ test/README.md |  6 +++---
+ 3 files changed, 17 insertions(+), 15 deletions(-)
+
+diff --git a/README.md b/README.md
+index 30c225f..adad450 100644
+--- a/README.md
++++ b/README.md
+@@ -9,11 +9,11 @@ An Elder Scrolls Online addon that provides a real-time mechanics overlay for ve
+ | Kyne's Aegis (KA) | ✅ Feature-complete |
+ | Rockgrove (RG) | 🔄 In progress |
+ | Dreadsail Reef (DSR) | 🔄 In progress |
+-| Asylum Sanctorium (AS) | 📋 Planned |
+-| Cloudrest (CR) | 📋 Planned |
+-| Sanity's Edge (SE) | 📋 Planned |
+-| Lucent Citadel (LC) | 📋 Planned |
+-| Ossein Cage (OC) | 📋 Planned |
++| Asylum Sanctorium (AS) | 🔄 In progress |
++| Cloudrest (CR) | 🔄 In progress |
++| Sanity's Edge (SE) | 🔄 In progress |
++| Lucent Citadel (LC) | 🔄 In progress |
++| Ossein Cage (OC) | 🔄 In progress |
+ | Sunspire (SS) | 🔄 In progress |
+ 
+ ## Optional dependencies
+@@ -32,7 +32,9 @@ Install via [Minion](https://minion.mmoui.com/) or manually from [ESOUI](https:/
+    ```
+    Documents\Elder Scrolls Online\live\AddOns\incha\
+    ```
+-2. The folder **must** be named `incha` (lowercase) — the manifest requires it.
++2. The folder **must** be named `incha` (lowercase). ESO derives `ADDON_NAME`
++   from the folder name — not from the manifest — and `bootstrap.lua:15-19`
++   builds the log prefix, slash command and saved-variable name from it.
+ 3. Launch ESO and enable **Incha** in the addon manager.
+ 
+ ## Usage
+@@ -97,8 +99,7 @@ core/                  engine (BossRegistry, CombatHandler, EventPipeline, Setti
+ ui/                    overlay panel and settings menu
+ trial/<id>/            per-trial modules
+   boss/<Name>.lua      per-boss combat handlers
+-  Factory.lua          trial setup / zone detection
+-  Dispatcher.lua       event routing
++  Factory.lua          trial setup / zone detection and boss order
+ test/                  offline test harness
+ ```
+ 
+diff --git a/ROADMAP.md b/ROADMAP.md
+index ef51e95..4f7ff3e 100644
+--- a/ROADMAP.md
++++ b/ROADMAP.md
+@@ -87,7 +87,8 @@ Checked items are **shipped** (committed). Unchecked items are pending.
+ 
+ ### Phase 3B — Overlay UI (in-play HUD)
+ - [x] `ui/Panel.lua` — `WINDOW_MANAGER` overlay implementing AlertSink vocabulary
+-      (`header`, `info1–3`, `action`, `clear`, `hideAction`).
++      (`header`, `info1–10`, `action`, `clear`, `hideAction`; 10 info lines —
++      INFO_LINE_COUNT in ui/Panel.lua:37 — in a 320x260 window.)
+       Drag-to-move + lock; position/scale persisted in `core/Settings.lua`.
+       Used by `ka`, `rg`, `dsr` as default bridge.
+ 
+@@ -214,7 +215,7 @@ BOSS_EVENT              = 10298   -- ACTION_RESULT_EFFECT_GAINED hitValue=1
+ 
+ ---
+ 
+-### CR — Cloudrest (zoneId = TBD) 📋 Planned
++### CR — Cloudrest (zoneId = 1051) 🔄 In progress
+ 
+ **Architecture note:** CR supports +0/+1/+2/+3 variants. The mini-bosses (Siroria, Relequen, Galenwe)
+ can be active simultaneously with Z'Maja. Use a single encounter module similar to AS,
+@@ -324,7 +325,7 @@ ZMAJA_SHACKLE_MINI = 107490  -- Mini dies → Z'Maja phase
+ 
+ ---
+ 
+-### LC — Lucent Citadel (zoneId = TBD) 📋 Planned
++### LC — Lucent Citadel (zoneId = 1478) 🔄 In progress
+ 
+ **Architecture note:** Sequential bosses, fits single-active-boss model.
+ 5–6 encounters: Baron, Cavot, Orphic, Xoryn, Zilyesset (with Count Ryelaz).
+@@ -415,7 +416,7 @@ These modules exist in LC main but LCH doesn't cover them → mechanics unknown
+ 
+ ---
+ 
+-### OC — Ossein Cage (zoneId = TBD) 📋 Planned
++### OC — Ossein Cage (zoneId = 1548) 🔄 In progress
+ 
+ **Architecture note:** 3 sequential bosses, fits single-active-boss model.
+ Boss 1: Jynorah (with Skorkhif mini). Boss 2: Kazpian. Boss 3: Shaper of Flesh.
+diff --git a/test/README.md b/test/README.md
+index b16ac4a..c804ed4 100644
+--- a/test/README.md
++++ b/test/README.md
+@@ -71,11 +71,11 @@ Exit code `0` = clean run.  Exit code `1` = at least one handler threw an error.
+ | 1121 | Sunspire (SS) |
+ | 1263 | Rockgrove (RG) |
+ | 1344 | Dreadsail Reef (DSR) |
+-| 1000 | Aetherian Archive (AS) |
+-| 1051 | Cradle of Shadows (CR) |
++| 1000 | Asylum Sanctorium (AS) |
++| 1051 | Cloudrest (CR) |
+ | 1427 | Sanity's Edge (SE) |
+ | 1478 | Lucent Citadel (LC) |
+-| 1548 | Oathsworn Pit (OC) |
++| 1548 | Ossein Cage (OC) |
+ 
+ ---
+ 
+-- 
+2.54.0
+

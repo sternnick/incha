@@ -1,0 +1,70 @@
+From 6f4a35b794d1f12bebb840a1499d047e89e20f8d Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH 1/2] fix(ui): reset the action-text cache in hideAction
+
+The action handler compares the new text against ctrl.actionText before
+calling SetText, but hideAction cleared the label without clearing that
+cache. The next identical action text therefore compares equal and is
+never re-painted, leaving the action line permanently blank.
+
+Reachable today: Trial.lua:186-192 calls hideAction() whenever no health
+rule matches, and Falgravn sets hideActionWhenNoRule, so the cycle is
+'rule text -> blank -> same rule text' inside a single pull.
+
+Evidence, exact line numbers and the reproduction command are in .review/code-review-2026-09-01.md (see finding F-08).
+Verification: static analysis only - not run in-game.
+---
+ ui/Panel.lua | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ui/Panel.lua b/ui/Panel.lua
+index 20bb944..fb77dc4 100644
+--- a/ui/Panel.lua
++++ b/ui/Panel.lua
+@@ -215,6 +215,7 @@ Panel.alerts = {
+     hideAction = function()
+         if not ctrl then return end
+         ctrl.action:SetText("")
++        ctrl.actionText = ""   -- keep the action= diff cache in sync
+         -- leave panel visible  -  info lines may still carry timer data
+     end,
+ 
+-- 
+2.54.0
+
+
+From b8377b39e6a249cf2fd5cae653140e827682ffc3 Mon Sep 17 00:00:00 2001
+From: sternnick review <review@localhost>
+Date: Tue, 1 Sep 2026 19:43:37 +0100
+Subject: [PATCH 2/2] fix(ui): name the overlay root control Incha_Panel
+
+ESO only exposes global controls whose names begin with the addon's own
+name (ADDON_NAME comes from the folder, so "incha"/"Incha" here - see
+bootstrap.lua:15-19). "InchPanel" matches neither form, so the control is
+created but not registered as a global and ESO logs a warning. Renaming
+costs nothing: ui/Panel.lua keeps the object in the local `ctrl`, no other
+file mentions the name, and nothing reads it back.
+
+UNVERIFIED assumption: that ESO rejects or warns on a non-conforming name.
+Worth one /reloadui + /eventtrace check before merging.
+---
+ ui/Panel.lua | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ui/Panel.lua b/ui/Panel.lua
+index fb77dc4..8aab1a8 100644
+--- a/ui/Panel.lua
++++ b/ui/Panel.lua
+@@ -77,7 +77,7 @@ local function build()
+     local sv = Settings.get().overlay
+ 
+     -- Outer container  -  the draggable root.
+-    local panel = WINDOW_MANAGER:CreateControl("InchPanel", GuiRoot, CT_CONTROL)
++    local panel = WINDOW_MANAGER:CreateControl("Incha_Panel", GuiRoot, CT_CONTROL)
+     panel:SetDimensions(W, H)
+     panel:SetClampedToScreen(true)
+     panel:SetMouseEnabled(not sv.locked)
+-- 
+2.54.0
+
