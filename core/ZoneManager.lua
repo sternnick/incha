@@ -77,6 +77,29 @@ function ZoneManager.onZoneChanged()
     enableTrialForZone(getPlayerZoneId())
 end
 
+--- Re-evaluate the zone the player is standing in against current settings.
+--- Called from the per-trial Enable checkboxes so a toggle takes effect
+--- immediately; until now .enabled was only consulted at zone-enter time,
+--- which meant the checkbox did nothing until you left and re-entered the
+--- trial (or reloaded the UI).
+function ZoneManager.refresh()
+    local zoneId = getPlayerZoneId()
+    local entry  = trials[zoneId]
+    if not entry then
+        return
+    end
+
+    local sv  = Settings.get()
+    local tsv = sv and entry.trialId and sv.trials[entry.trialId]
+    local wanted = not (tsv and tsv.enabled == false)
+
+    if not wanted and activeTrial == entry.module then
+        disableCurrentTrial()
+    elseif wanted and activeTrial ~= entry.module then
+        enableTrialForZone(zoneId)
+    end
+end
+
 function ZoneManager.getActiveZoneId()
     return activeZoneId
 end

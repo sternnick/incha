@@ -9,7 +9,8 @@
 local Log      = require("lib.Log")
 local Panel    = require("ui.Panel")
 local Preview  = require("ui.Preview")
-local Settings = require("core.Settings")
+local Settings    = require("core.Settings")
+local ZoneManager = require("core.ZoneManager")
 
 local Menu = {}
 
@@ -86,6 +87,16 @@ local OPTIONS = {
     },
     {
         type    = "checkbox",
+        name    = "Enable",
+        tooltip = "Track Yandir/Vrol/Falgravn mechanics and the overlay for this trial.",
+        getFunc = function() return Settings.get().trials.ka.enabled end,
+        setFunc = function(v)
+            Settings.get().trials.ka.enabled = v
+            ZoneManager.refresh()
+        end,
+    },
+    {
+        type    = "checkbox",
         name    = "Show boss panel",
         tooltip = "Display boss name and hardmode status on enter.",
         getFunc = function() return Settings.get().trials.ka.showBossUI end,
@@ -123,7 +134,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track Lokke laser/tomb timers, Yolna/Nahvii mechanics, and shared-add alerts.",
         getFunc = function() return Settings.get().trials.ss.enabled end,
-        setFunc = function(v) Settings.get().trials.ss.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.ss.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -142,7 +156,10 @@ local OPTIONS = {
         type    = "checkbox",
         name    = "Enable",
         getFunc = function() return Settings.get().trials.rg.enabled end,
-        setFunc = function(v) Settings.get().trials.rg.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.rg.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -161,7 +178,10 @@ local OPTIONS = {
         type    = "checkbox",
         name    = "Enable",
         getFunc = function() return Settings.get().trials.dsr.enabled end,
-        setFunc = function(v) Settings.get().trials.dsr.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.dsr.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -181,7 +201,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track Olms timers, Llothis/Felms dormant state, and Protector shield.",
         getFunc = function() return Settings.get().trials.as.enabled end,
-        setFunc = function(v) Settings.get().trials.as.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.as.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -208,7 +231,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track mini-boss timers (Siroria/Relequen/Galenwe), portal countdown, and Z'Maja mechanics.",
         getFunc = function() return Settings.get().trials.cr.enabled end,
-        setFunc = function(v) Settings.get().trials.cr.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.cr.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -235,7 +261,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track Yaseyla bomb timers, Chimera despawn/chain lightning, and Ansuul calamity/phase alerts.",
         getFunc = function() return Settings.get().trials.se.enabled end,
-        setFunc = function(v) Settings.get().trials.se.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.se.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -262,7 +291,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track side assignment (Ryelaz/Zilyesset), Orphic Xoryn jump/cone timers, Xynizata interrupt CDs, and Xoryn current/knot alerts.",
         getFunc = function() return Settings.get().trials.lc.enabled end,
-        setFunc = function(v) Settings.get().trials.lc.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.lc.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",
@@ -282,7 +314,10 @@ local OPTIONS = {
         name    = "Enable",
         tooltip = "Track Jynorah dragon leap/clash phases, Kazpian chain/portal/channeler alerts, and Shaper of Flesh shield status.",
         getFunc = function() return Settings.get().trials.oc.enabled end,
-        setFunc = function(v) Settings.get().trials.oc.enabled = v end,
+        setFunc = function(v)
+            Settings.get().trials.oc.enabled = v
+            ZoneManager.refresh()
+        end,
     },
     {
         type    = "checkbox",

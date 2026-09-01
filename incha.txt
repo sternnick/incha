@@ -28,12 +28,12 @@ core/Settings.lua
 core/ModuleLoader.lua
 core/CombatHandler.lua
 core/Bridge.lua
+core/ZoneManager.lua
 
 ui/Panel.lua
 ui/Preview.lua
 ui/Menu.lua
 core/Trial.lua
-core/ZoneManager.lua
 
 trial/ka/boss/Yandir.lua
 trial/ka/boss/Vrol.lua
