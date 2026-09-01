@@ -7,6 +7,9 @@ local Throttle     = require("lib.Throttle")
 local TrialContext = require("core.TrialContext")
 local BridgeBase   = require("core.Bridge")
 
+-- Unit tags occupied by trial bosses (nameplate slots, engine order).
+local BOSS_SLOTS   = { "boss1", "boss2", "boss3", "boss4" }
+
 local Trial = {}
 Trial.__index = Trial
 
@@ -69,7 +72,7 @@ function Trial.create(options)
             self:onBossesChanged(forceReset)
         end,
         onPowerUpdate = function(eventCode, unitTag, powerIndex, powerType, powerValue, powerMax, powerEffectiveMax)
-            self:onPowerUpdate(powerValue, powerMax)
+            self:onPowerUpdate(unitTag, powerValue, powerMax)
         end,
         -- Always registered  -  Trial:onCombatState delegates to the active boss
         -- if it has the callback, so no trial-level conditional is needed.
@@ -115,19 +118,31 @@ function Trial:onBossesChanged(forceReset)
 
     local _, x, y, z = GetUnitWorldPosition("player")
     local bossClass = self.registry:findAtPosition(x, y, z)
+    local bossSlot  = nil   -- which boss1..boss4 tag the match came from
 
     -- Fallback: name-based detection for trials whose bosses carry a `name`
     -- field instead of (or in addition to) a location bounding box.
     -- Check boss1-boss4 so concurrent-boss encounters (e.g. Ryelaz+Zilyesset)
     -- are detected correctly regardless of which slot the engine assigns first.
     if not bossClass then
-        for _, slot in ipairs({"boss1", "boss2", "boss3", "boss4"}) do
+        for _, slot in ipairs(BOSS_SLOTS) do
             if DoesUnitExist(slot) then
                 local candidate = self.registry:findByName(GetUnitName(slot))
                 if candidate then
                     bossClass = candidate
+                    bossSlot  = slot
                     break
                 end
+            end
+        end
+    else
+        -- Position match: resolve which slot this boss actually occupies so the
+        -- health poll and the power-update guard use the same unit.
+        for _, slot in ipairs(BOSS_SLOTS) do
+            if DoesUnitExist(slot)
+               and self.registry:findByName(GetUnitName(slot)) == bossClass then
+                bossSlot = slot
+                break
             end
         end
     end
@@ -136,9 +151,16 @@ function Trial:onBossesChanged(forceReset)
         -- Create a fresh instance  -  no state carried over from previous pulls.
         local instance = bossClass.new()
         self.activeBoss = instance
-        self.context:setBoss(instance)
+        self.context:setBoss(instance, bossSlot)
 
-        local _, _, effectiveMax = GetUnitPower("boss1", POWERTYPE_HEALTH)
+        -- Info/action lines from the previous boss must not survive the
+        -- transition: on a boss-to-boss change nothing else clears them, so the
+        -- panel keeps the dead boss's timers until the new boss overwrites each
+        -- line - or forever, for lines the new boss never writes.
+        self.alerts:clear()
+
+        local _, _, effectiveMax =
+            GetUnitPower(bossSlot or "boss1", POWERTYPE_HEALTH)
         self.context:setDifficulty(self.registry:detectDifficulty(bossClass, effectiveMax))
 
         if instance.onEnter then
@@ -155,8 +177,17 @@ function Trial:onBossesChanged(forceReset)
     end
 end
 
-function Trial:onPowerUpdate(powerValue, powerMax)
+function Trial:onPowerUpdate(unitTag, powerValue, powerMax)
     if not self.enabled then
+        return
+    end
+
+    -- Only the tracked boss drives the overlay. Concurrent encounters put two
+    -- units into boss slots at once (Ryelaz + Zilyesset in LC, Lylanar +
+    -- Turlassil in DSR); without this guard the wrong unit's percentage feeds
+    -- health rules and every timer keyed on a % window.
+    local tracked = self.context.bossUnitTag
+    if tracked and unitTag ~= tracked then
         return
     end
     -- powerMax can be 0 briefly during boss transitions; skip the tick to

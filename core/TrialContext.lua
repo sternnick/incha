@@ -11,12 +11,18 @@ function TrialContext.new(trialId)
         difficulty    = Difficulty.NONE,
         isHM          = false,   -- pre-computed; kept in sync with difficulty
         stage         = 1,
+        -- boss1..boss4 tag the active boss occupies (nil = unknown). Mechanics
+        -- that name or poll the boss must use this, not a literal "boss1".
+        bossUnitTag   = nil,
         inCombat      = false,
         healthPercent = 0,
     }, TrialContext)
 end
 
-function TrialContext:setBoss(boss)
+--- @param boss    table|nil  active boss instance (nil = no boss)
+--- @param unitTag string|nil boss1..boss4 tag it was matched on (nil = unknown)
+function TrialContext:setBoss(boss, unitTag)
+    self.bossUnitTag = boss and unitTag or nil
     if boss then
         self.bossId = boss.id
         self.bossKey = boss.key
