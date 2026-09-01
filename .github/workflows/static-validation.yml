@@ -1,0 +1,30 @@
+name: static-validation
+
+on:
+  push:
+    branches: [master, "fix/*", "feature/*"]
+  pull_request:
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: encoding, manifest sync, load order, control names
+        run: python3 tools/static_checks.py
+
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: parse every shipped Lua file
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm install --no-save luaparse@1.8.0
+          node tools/syntax_check.js
