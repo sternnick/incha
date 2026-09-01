@@ -71,11 +71,11 @@ Exit code `0` = clean run.  Exit code `1` = at least one handler threw an error.
 | 1121 | Sunspire (SS) |
 | 1263 | Rockgrove (RG) |
 | 1344 | Dreadsail Reef (DSR) |
-| 1000 | Aetherian Archive (AS) |
-| 1051 | Cradle of Shadows (CR) |
+| 1000 | Asylum Sanctorium (AS) |
+| 1051 | Cloudrest (CR) |
 | 1427 | Sanity's Edge (SE) |
 | 1478 | Lucent Citadel (LC) |
-| 1548 | Oathsworn Pit (OC) |
+| 1548 | Ossein Cage (OC) |
 
 ---
 
