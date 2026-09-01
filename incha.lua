@@ -48,7 +48,8 @@ local function OnAddOnLoaded(event, addonName)
 
     ZoneManager.onZoneChanged()
 
-    d(ADDON_TAG .. " v0.1.0 loaded  -  " .. ADDON_SLASH .. " for commands")
+    d(ADDON_TAG .. " v" .. ADDON_VERSION .. " loaded  -  " .. ADDON_SLASH
+      .. " for commands")
 end
 
 EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)

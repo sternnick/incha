@@ -19,6 +19,7 @@ ADDON_NAME   = _n                -- folder name  -  matches EVENT_ADD_ON_LOADED
 ADDON_TITLE  = _t                -- display name  -  "Incha"
 ADDON_TAG    = "|cFFD700[" .. _t .. "]|r"  -- coloured chat prefix  -  "[Incha]"
 ADDON_SLASH  = "/" .. _n         -- slash command  -  "/incha"
+ADDON_VERSION = "0.1.0"         -- single source of truth (README badge, LAM, chat)
 ADDON_SV     = _t .. "_SV"      -- SavedVariables key  -  "Incha_SV"
 ADDON_PREFIX = _t .. "_"        -- event/handler name prefix  -  "Incha_"
 ADDON_LAM    = _t .. "Settings"  -- LibAddonMenu panel ID  -  "InchaSettings"
