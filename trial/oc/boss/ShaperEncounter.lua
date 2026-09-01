@@ -1,4 +1,4 @@
-﻿
+
 local CA               = require("lib.CA")
 local BossBase         = require("lib.BossBase")
 local CastDur          = require("lib.CastDur")
