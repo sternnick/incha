@@ -1,6 +1,6 @@
 ## Title: Incha
 ## Description: Trial helper — mechanics overlay for KA, SS, RG, DSR, AS, CR, SE, LC, OC
-## Version: 0.0.1
+## Version: 0.1.0
 ## Author: Oseias
 ## APIVersion: 101042
 ## SavedVariables: Incha_SV
