@@ -215,6 +215,7 @@ Panel.alerts = {
     hideAction = function()
         if not ctrl then return end
         ctrl.action:SetText("")
+        ctrl.actionText = ""   -- keep the action= diff cache in sync
         -- leave panel visible  -  info lines may still carry timer data
     end,
 
