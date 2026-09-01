@@ -1,12 +1,13 @@
 #!/bin/sh
-# Enforce branch naming: only feature/* or fix/* branches may be pushed.
-# master is handled by GitHub branch protection.
+# Two push-time guards, both cheap and both offline:
+#   1. branch naming: feature/* or fix/* (master is handled by branch protection)
+#   2. encoding: a UTF-8 BOM in a .lua file can make ESO's loader reject the file
+#      at 1:1, which silently kills a whole trial (see 2026-09-01 review, F-01).
 
 branch=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
 
 case "$branch" in
   feature/*|fix/*|master)
-    exit 0
     ;;
   *)
     echo "ERROR: Branch '$branch' does not match naming rules."
@@ -14,3 +15,16 @@ case "$branch" in
     exit 1
     ;;
 esac
+
+bad=$(git diff --name-only --diff-filter=ACM "$@" 2>/dev/null | grep '\.lua$')
+[ -z "$bad" ] && bad=$(git ls-files '*.lua')
+for f in $bad; do
+  [ -f "$f" ] || continue
+  if [ "$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; then
+    echo "ERROR: $f starts with a UTF-8 BOM - strip it:"
+    echo "       sed -i '1s/^\xEF\xBB\xBF//' $f"
+    exit 1
+  fi
+done
+
+exit 0
