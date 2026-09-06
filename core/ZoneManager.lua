@@ -21,7 +21,7 @@ local activeEntry   = nil   -- the trials[] entry currently enabled
 --- That keeps every boss class, routing table and constant table reachable.
 --- Reducing it would mean building Trials lazily on zone entry, which the
 --- manifest load model does not allow without restructuring the Factories.
---- See the Phase 0 note in ROADMAP.md.
+--- See decision A2 in docs/decisions/architecture.md.
 function ZoneManager.registerTrial(zoneId, trialModule, trialId)
     trials[zoneId] = { module = trialModule, trialId = trialId }
 end
