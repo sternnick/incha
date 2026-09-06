@@ -80,6 +80,14 @@ The node tables use `x 22,300–27,796` / `z 7,114–12,970` while the box is `x
 the convention is right elsewhere and the Falgravn tables look inherited without re-measurement.
 `checkNodeCoordSpace()` prints the comparison under `/incha debug`. See #126.
 
+**Likely cause — the broken-recipe bug.** The old ROADMAP documented `local x,y,z,_ =
+GetUnitWorldPosition("player")` as the measurement recipe, which binds `x` to the zone id (a 5-digit
+integer) and drops the real x into `z`. The Falgravn node values (`x ≈ 22,000`) are consistent with a
+zone id, not a world coordinate. This means the stored values are probably `(zoneId, actualY, actualX)`
+in disguise — the fix is not just re-measurement but discarding all three fields and starting from
+scratch with the correct form (leading `_`, as documented above). The Vrol tables were presumably
+measured correctly or corrected later, which is why they pass.
+
 ---
 
 ## DSR — the dual-boss pair
