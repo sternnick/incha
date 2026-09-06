@@ -59,7 +59,7 @@ end
 -- (DE/FR/RU/ES/JP) it matches nothing and the trial silently does nothing.
 -- Only KA currently declares Location bounds, which are locale-independent;
 -- every other trial relies solely on this path.  See the "Real Location
--- bounds" item in the ROADMAP verification backlog.
+-- bounds" item tracked as issue #123.
 function BossRegistry:findByName(unitName)
     local target = normalize(unitName)
     if not target then return nil end

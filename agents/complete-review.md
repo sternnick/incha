@@ -108,7 +108,7 @@ points as one line and move on.
 
 Build a map before judging anything. Read, in this order:
 
-1. `README.md` and `ROADMAP.md` — what the project claims about itself.
+1. `README.md` and `docs/decisions/` — what the project claims about itself, and why it is shaped that way.
 2. `incha.txt` — the ESO manifest. **This is the load order**, and it is the only
    thing that decides which files execute. A file not listed never runs.
 3. `bootstrap.lua` — the `require` shim and the `ADDON_*` identity globals.
@@ -229,7 +229,7 @@ Correctness — for each mechanic that can run:
 - Do the alerts fire early enough to act on? A callout that lands after the mechanic
   resolves is a defect even though nothing errors.
 
-Cross-check against the sources of truth in the repo — `ROADMAP.md`, the ability-id
+Cross-check against the sources of truth in the repo — `docs/decisions/`, the ability-id
 comments, and any reference-addon notes. **Where the code and the documentation
 disagree, that is a finding in itself**, and you must determine which one is wrong
 rather than assuming the code is right.

@@ -16,5 +16,5 @@ Thumbs.db
 test/live-data/
 
 # Local review reports — kept out of the repo to avoid accidental commits
-.review/
+reviews/
 .plan/

@@ -10,9 +10,10 @@ each mechanic actually works*. You are a research → evidence → test → impl
 agent, in that order. An hour spent proving an ability id is real is worth more than a
 day spent implementing a guessed one.
 
-Read this file together with `ROADMAP.md`, `README.md`, `test/README.md`, and the
-source. This file defines how you operate; `ROADMAP.md` defines what the project
-needs. Neither overrides verified repository behaviour.
+Read this file together with the open [issues](https://github.com/oseias-pt/incha/issues),
+`docs/decisions/`, `README.md`, `test/README.md`, and the source. This file defines how you
+operate; the issue tracker defines what the project needs; `docs/decisions/` records why the code
+is shaped the way it is. Neither overrides verified repository behaviour.
 
 For a full audit of the codebase rather than incremental work, use
 `agents/complete-review.md` instead.
@@ -68,7 +69,7 @@ The developer edits this section. Work the highest priority you can actually mak
 progress on today.
 
 **Priority 1 — Make the test system smarter.**
-This outranks feature work deliberately. There are 158 unchecked roadmap items; letting
+This outranks feature work deliberately. There is a lot of unimplemented mechanic work queued; letting
 an agent implement them against a harness that cannot tell whether a mechanic ever
 fires would manufacture confident-looking wrong code at scale. Two capabilities are
 missing and both are already scoped in `test/README.md`:
@@ -80,7 +81,7 @@ missing and both are already scoped in `test/README.md`:
 - *Encounter snapshots.* Record the alert sequence for a known log, commit it as a
   fixture, and fail CI when it changes unexpectedly.
 
-**Priority 2 — Fix confirmed bugs listed in `ROADMAP.md`.**
+**Priority 2 — Fix bugs in the [v0.2 — Critical fixes](https://github.com/oseias-pt/incha/milestone/1) milestone.**
 
 **Priority 3 — Research unfinished mechanics for trials marked "In progress".**
 
@@ -98,11 +99,11 @@ so one play session settles many of them at once.
 ```bash
 git fetch origin && git log --oneline -20
 gh pr list --limit 30          # do not duplicate in-flight work
-grep -c '^\s*- \[ \]' ROADMAP.md
+gh issue list --milestone "v0.2 — Critical fixes" --limit 50
 ```
 
-Read the roadmap section for the area you are considering, the boss module, and its
-existing tests. Then pick **one small, coherent task** that can be completed and
+Read the issue for the area you are considering, the relevant `docs/decisions/` entry, the boss
+module, and its existing tests. Then pick **one small, coherent task** that can be completed and
 validated independently. Do not batch unrelated trials.
 
 If recent commits or an open PR already cover your candidate, choose something else and
@@ -297,19 +298,31 @@ hardmode resolution and proximity distances.
 
 ---
 
-## 5. ROADMAP rules
+## 5. Issue and decision-log rules
 
-You may edit `ROADMAP.md`.
+**Issues are the task list.** You may comment on them and open new ones.
 
-- `[x]` only for work that is implemented **and** validated.
-- `[ ]` for anything else.
-- Items needing a game client stay unchecked until someone has been in game, no matter
-  how complete the code is.
-- Add a short evidence note when it helps the next run.
-- If you find the roadmap asserting something the tree contradicts, fix the roadmap and
-  report it — that has happened before and it erodes trust in the whole document.
+- Close an issue only when the work is implemented **and** validated. Writing code is
+  not completion.
+- An issue needing a game client stays open until someone has been in game, no matter
+  how complete the code is. Move it to the `Verification sprint` milestone and add the
+  exact measurement steps rather than closing it.
+- If you find an issue asserting something the tree contradicts, correct the issue and
+  say so in the comment. That has happened — #121 claimed 13 bosses carried a
+  placeholder threshold when 5 did, and the error would have sent someone to re-measure
+  three bosses that were already calibrated.
+- Do not open a duplicate. Search first; #83 and #121 tracked the same problem twice
+  without either knowing about the other.
 
-Writing code is not completion. Validation is completion.
+**`docs/decisions/` is the decision log.** You may add to it.
+
+- Add an entry when you make a choice with a defensible alternative and the reasoning is
+  not visible in the diff — especially something that looks wrong until you know why.
+- Do not put actionable work there. If it is work, it is an issue.
+- Do not restate what the code says plainly. An ability id belongs in the boss module;
+  repeating it creates a second copy that drifts, which is why `ROADMAP.md` was retired.
+- Append rather than edit. When a decision is reversed, mark the original **Superseded**
+  and add a new entry — the history of the reversal is usually the useful part.
 
 ---
 
@@ -363,7 +376,8 @@ something correct-but-unfinished is always better than shipping something plausi
 ```
 agents/workflow-code-review.md   how the agent operates      (this file)
 agents/complete-review.md        how to audit the whole tree
-ROADMAP.md                       what the project needs
+GitHub issues + project board    what the project needs
+docs/decisions/                  why the code is shaped this way
 test/                            how we prove things
 test/checks/                     invariants that cannot regress
 Encounter logs                   observed evidence

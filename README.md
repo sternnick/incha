@@ -116,7 +116,8 @@ nine trials, rather than a per-trial `Dispatcher.lua`.
 - Boss modules declare `combatRoutes` / `effectRoutes` tables keyed by ability ID, plus optional `onEnter`, `onWipe`, `onLeave`, `onUpdate` and `onPowerUpdate` hooks. `BossBase` supplies `new()` via `fromSchema`, the default `onDied`, `cleanupAlertList`, and `after`/`cancelAfter` for deferred callbacks.
 - Combat and effect events are registered **per ability ID**. An ability missing from a routing table (or from a common module's `combatAbilityIds` / `effectAbilityIds`) is never registered, so its handler is dead code — `test/checks/filters.lua` guards the related invariants.
 - `stateSchema` on each boss defines the saved-variable shape for per-boss persistence.
-- Zone IDs and boss name strings that are marked TBD in ROADMAP.md require in-game verification — see the [verification backlog](ROADMAP.md#in-game-verification-backlog).
+- Zone IDs, boss name strings and hardmode thresholds needing in-game verification are tracked in the [Verification sprint](https://github.com/oseias-pt/incha/milestone/2) milestone.
 - OSI calls must always be nil-guarded; the dependency is optional.
 
-See [ROADMAP.md](ROADMAP.md) for the full implementation plan and open architecture questions.
+Work in flight is tracked in [GitHub issues](https://github.com/oseias-pt/incha/issues) and the [project board](https://github.com/users/oseias-pt/projects/3).
+Why the code is shaped the way it is — load model, lifecycle, dispatch, i18n, per-trial detection — is in [docs/decisions](docs/decisions).
