@@ -352,6 +352,41 @@ local function printHelp()
     d("  /ip clear          -  clear all preview effects")
 end
 
+-- -- Preview dispatch -------------------------------------------------------
+-- Both /incha preview <kind> and the /ip <kind> alias end up here, through one
+-- copy of the table instead of two hand-maintained if-chains.
+--
+-- The 200 ms deferral is what makes a preview visible at all. Submitting a chat
+-- command closes the chat "hudui" overlay, and applyVisibility() called while
+-- that transition is still running reads hudVisible as false -  which hides the
+-- panel immediately after showing it. The alias had this delay and handleSlash
+-- did not, so /incha preview looked broken while /ip did the same thing
+-- correctly.
+--
+-- The LAM preview buttons (see PANEL below) stay synchronous on purpose: that
+-- path is a mouse click on an open settings panel, with no hudui transition in
+-- flight, and the invariant about self:after() is about boss-scoped work that a
+-- wipe must cancel -  a preview has no pull to belong to.
+local PREVIEW_DELAY_MS = 200
+local PREVIEW_KINDS = {
+    panel  = function() Preview.showPanel()      end,
+    inst   = function() Preview.showInstability() end,
+    border = function() Preview.showCaBorder()    end,
+    alert  = function() Preview.showCaAlert()     end,
+    clear  = function() Preview.clear()           end,
+}
+
+local function isPreviewKind(sub)
+    return sub ~= nil and PREVIEW_KINDS[sub] ~= nil
+end
+
+local function showPreview(sub)
+    local fn = PREVIEW_KINDS[sub]
+    if not fn then return false end
+    zo_callLater(fn, PREVIEW_DELAY_MS)
+    return true
+end
+
 local function handleSlash(text)
     local cmd, arg = (text or ""):lower():match("^%s*(%S*)%s*(.*)")
     local sv = Settings.get()
@@ -385,12 +420,7 @@ local function handleSlash(text)
 
     elseif cmd == "preview" then
         local sub = arg:match("^%s*(%S*)")
-        if     sub == "panel"  then Preview.showPanel()
-        elseif sub == "inst"   then Preview.showInstability()
-        elseif sub == "border" then Preview.showCaBorder()
-        elseif sub == "alert"  then Preview.showCaAlert()
-        elseif sub == "clear"  then Preview.clear()
-        else
+        if not showPreview(sub) then
             d(ADDON_TAG .. " preview: panel | inst | border | alert | clear")
         end
 
@@ -403,24 +433,11 @@ end
 
 local function handlePreviewSlash(text)
     local sub = (text or ""):lower():match("^%s*(%S*)")
-    -- Confirm the command was received immediately (visible in chat).
-    -- The actual effect is deferred 200 ms so the HUD scene has time to
-    -- return to "showing" after the chat input closes before we call
-    -- applyVisibility() inside Panel.alerts / Preview.  Without the
-    -- delay the command runs while the chat "hudui" overlay is still
-    -- transitioning and hudVisible may still be false, which hides the
-    -- panel immediately after showing it.
-    if sub == "panel" or sub == "inst" or sub == "border"
-                     or sub == "alert" or sub == "clear" then
+    -- Confirm the command was received immediately (visible in chat), then defer
+    -- through showPreview -  see the note there for why the delay is required.
+    if isPreviewKind(sub) then
         d(ADDON_TAG .. " /ip " .. sub)
-        zo_callLater(function()
-            if     sub == "panel"  then Preview.showPanel()
-            elseif sub == "inst"   then Preview.showInstability()
-            elseif sub == "border" then Preview.showCaBorder()
-            elseif sub == "alert"  then Preview.showCaAlert()
-            elseif sub == "clear"  then Preview.clear()
-            end
-        end, 200)
+        showPreview(sub)
     else
         d(ADDON_TAG .. " /ip  panel | inst | border | alert | clear")
     end
