@@ -9,6 +9,7 @@ name: checks
 #   sh     test/checks/branch-name.sh
 #   luajit test/checks/globals.lua
 #   luajit test/checks/manifest.lua
+#   luajit test/checks/load-order.lua
 #   luajit test/checks/lang.lua
 #   luajit test/checks/contracts.lua
 #   luajit test/checks/filters.lua
@@ -85,6 +86,13 @@ jobs:
       - name: Manifest
         if: ${{ !cancelled() }}
         run: luajit test/checks/manifest.lua
+
+      # manifest.lua proves every file is listed; this proves the listed ORDER
+      # can execute, which nothing did before: a file moved after the files that
+      # require it at load time passed all ten checks and threw in game.
+      - name: Load order
+        if: ${{ !cancelled() }}
+        run: luajit test/checks/load-order.lua
 
       # String table: a duplicate key is silently dropped by Lua, a missing key
       # shows the player a raw key, and an orphan is dead weight a translator

@@ -37,6 +37,7 @@ run syntax         sh     test/checks/syntax.sh
 run encoding       sh     test/checks/encoding.sh
 run globals        luajit test/checks/globals.lua
 run manifest       luajit test/checks/manifest.lua
+run load-order     luajit test/checks/load-order.lua
 run lang           luajit test/checks/lang.lua
 run contracts      luajit test/checks/contracts.lua
 run filters        luajit test/checks/filters.lua
