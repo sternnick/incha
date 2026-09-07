@@ -19,6 +19,7 @@
 local CA = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
+local Colors = require("core.Colors")
 local SunspireCommon = {}
 
 -- -- Ability ID sets --------------------------------------------------------
@@ -84,13 +85,6 @@ local BREATH_FALLBACK = 3000
 local SPIT_FALLBACK   = 1200
 local CHARGE_FALLBACK = 1200
 
--- -- CA bar colour palette -------------------------------------------------
--- { dodgeTiming, dodgeText, bool, fillColor, actionColor }
-local COL_HA     = { -2, 0, false, { 1.0, 0.35, 0.0, 0.4 }, { 1.0, 0.35, 0.0, 0.8 } }
-local COL_BLOCK  = { -2, 0, false, { 0.9, 0.85, 0.0, 0.4 }, { 0.9, 0.85, 0.0, 0.8 } }
-local COL_BREATH = { -3, 0, false, { 0.3, 0.75, 1.0, 0.4 }, { 0.3, 0.75, 1.0, 0.8 } }
-local COL_SPIT   = { -3, 0, false, { 1.0, 0.50, 0.0, 0.4 }, { 1.0, 0.50, 0.0, 0.8 } }
-local COL_CHARGE = { -2, 0, false, { 0.2, 0.60, 1.0, 0.4 }, { 0.2, 0.60, 1.0, 0.8 } }
 
 -- -- Public handler ---------------------------------------------------------
 -- Called by CombatHandler (boss.common.handle) before the combatRoutes lookup.
@@ -104,7 +98,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, HA_FALLBACK)
         alerts:showAction(Lang.t("ss_block_heavy_attack"))
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_HA)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
         return true
     end
 
@@ -114,7 +108,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
     if BLOCK_IDS[abilityId] then
         local dur = CastDur.get(abilityId, BLOCK_FALLBACK)
         alerts:showAction(Lang.t("ss_block_jump"))
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_BLOCK)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.LIGHTNING)
         return true
     end
 
@@ -122,7 +116,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
     if abilityId == LEAP then
         local dur = CastDur.get(LEAP, BLOCK_FALLBACK)
         alerts:showAction(Lang.t("ss_dodge_leap"))
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_BLOCK)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.LIGHTNING)
         return true
     end
 
@@ -131,7 +125,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(SHIELD_CHARGE, CHARGE_FALLBACK)
         alerts:showAction(Lang.t("ss_block_shield_charge"))
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_CHARGE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.ICE)
         return true
     end
 
@@ -140,7 +134,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, BREATH_FALLBACK)
         alerts:showAction(Lang.t("ss_dodge_breath"))
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_BREATH)
+        CA.ranged(abilityId, sourceUnitName, dur, Colors.ICE)
         return true
     end
 
@@ -152,7 +146,7 @@ function SunspireCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNam
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, SPIT_FALLBACK)
         alerts:showAction(Lang.t("ss_atro_incoming"))
-        CA.alertCast(abilityId, sourceUnitName, dur + spitOffset, COL_SPIT)
+        CA.ranged(abilityId, sourceUnitName, dur + spitOffset, Colors.ORANGE)
         return true
     end
 

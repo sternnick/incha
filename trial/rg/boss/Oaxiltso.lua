@@ -16,10 +16,6 @@ local RockgroveCommon = require("trial.rg.RockgroveCommon")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
 
-local COL_BLITZ_LBL  = "ff6030"   -- orange-red (next blitz label)
-local COL_SLUDGE_LBL = "50c050"   -- medium green (next sludge label)
-local COL_ENRAGE     = "ff2020"   -- bright red (boss enrage)
-local COL_ADD_ENRAGE = "ff6020"   -- orange-red (add enrage)
 
 -- -- Ability IDs ------------------------------------------------------------
 local SAVAGE_BLITZ    = 149414   -- combatRoute: ACTION_RESULT_BEGIN -> Savage Blitz caAlertCast
@@ -40,11 +36,9 @@ local POOL_EX_LEFT = { 91973, 35751, 81764 }
 
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes -----------------------------------------------------
-local COL_BLITZ  = { 0.8, 0.0, 0.0, 0.4 }   -- red fill, no action text (mirrors QRH)
-local COL_CONE   = { -2, 0, false, { 1.0, 0.55, 0.0, 0.4 }, { 1.0, 0.55, 0.0, 0.8 } }
-local COL_CHAINS = { -3, 0, false, { 0.7, 0.3,  1.0, 0.4 }, { 0.7, 0.3,  1.0, 0.8 } }
 
 -- -- Distance helper (squared, world coords  -  no sqrt needed for comparison) -
 local function distSq(x1, y1, z1, x2, y2, z2)
@@ -66,8 +60,8 @@ Oaxiltso.stateSchema = {
     lastSludge         = 0,
     lastPoisonTracker  = 0,
     sludgeTracker1     = 0,
-    sludgeTracker1Tag  = nil,   -- unitTag of the first sludge target (nil = none)
-    sludgeTracker1Name = nil,   -- display name cache for sludge alert text
+    sludgeTracker1Tag  = false, -- unitTag of the first sludge target (false = none)
+    sludgeTracker1Name = false, -- display name cache for sludge alert text
     bossEnraged        = false,
     miniEnraged        = false,
     -- zo_callLater handle for the 2.5 s Sunburst delayed meteor alert.
@@ -94,8 +88,8 @@ function Oaxiltso:onWipe(context, alerts)
     self.lastSludge        = 0
     self.lastPoisonTracker = 0
     self.sludgeTracker1    = 0
-    self.sludgeTracker1Tag  = nil
-    self.sludgeTracker1Name = nil
+    self.sludgeTracker1Tag  = false
+    self.sludgeTracker1Name = false
     self.bossEnraged       = false
     self.miniEnraged       = false
 end
@@ -106,7 +100,7 @@ Oaxiltso.common = RockgroveCommon
 
 local function handleSavageBlitz(self, context, alerts, abilityId, ...)
     self.lastBlitz = GetGameTimeMilliseconds() / 1000
-    CA.castAlertsStart(abilityId, "Savage Blitz", 2750, 2750, COL_BLITZ)
+    CA.bar(abilityId, "Savage Blitz", 2750, 2750, Colors.RED, 0.4)
 end
 
 local function handleNoxiousSludge(self, context, alerts, abilityId, ...)
@@ -131,14 +125,14 @@ local function handleCinderCleave(self, context, alerts, abilityId,
                                    sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     alerts:showAction(Lang.t("rg_oaxiltso_dodge_cone"))
-    CA.alertCast(abilityId, sourceUnitName, 2000, COL_CONE)
+    CA.melee(abilityId, sourceUnitName, 2000, Colors.ORANGE)
 end
 
 local function handleEmberChains(self, context, alerts, abilityId,
                                   unitTag, sourceUnitTag, sourceUnitId, unitId,
                                   sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
-    CA.alertCast(abilityId, sourceUnitName, 750, COL_CHAINS)
+    CA.ranged(abilityId, sourceUnitName, 750, Colors.PURPLE)
 end
 
 local function handleAddSpawn(self, context, alerts, abilityId, ...)
@@ -221,9 +215,9 @@ local function showBlitzLine(self, alerts, now)
     if self.lastBlitz > 0 then
         local T = 36 - (now - self.lastBlitz)
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_BLITZ_LBL, Lang.t("rg_oaxiltso_next_blitz")), T)
+            alerts:setRow(1, Fmt.c(Fmt.FIRE, Lang.t("rg_oaxiltso_next_blitz")), T)
         else
-            alerts:setRow(1, Fmt.c(COL_BLITZ_LBL, Lang.t("rg_oaxiltso_next_blitz")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
+            alerts:setRow(1, Fmt.c(Fmt.FIRE, Lang.t("rg_oaxiltso_next_blitz")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
         end
     else
         alerts:clearRow(1)
@@ -235,9 +229,9 @@ local function showSludgeLine(self, alerts, now)
     if self.lastSludge > 0 then
         local T = 28 - (now - self.lastSludge)
         if T > 0 then
-            alerts:setRow(2, Fmt.c(COL_SLUDGE_LBL, Lang.t("rg_oaxiltso_next_sludge")), T)
+            alerts:setRow(2, Fmt.c(Fmt.POISON, Lang.t("rg_oaxiltso_next_sludge")), T)
         else
-            alerts:setRow(2, Fmt.c(COL_SLUDGE_LBL, Lang.t("rg_oaxiltso_next_sludge")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
+            alerts:setRow(2, Fmt.c(Fmt.POISON, Lang.t("rg_oaxiltso_next_sludge")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
         end
     else
         alerts:clearRow(2)
@@ -247,11 +241,11 @@ end
 -- Row 3: Enrage state  -  boss enraged, add enraged, or both.
 local function showEnrageLine(self, alerts)
     if self.bossEnraged and self.miniEnraged then
-        alerts:setRow(3, Fmt.c(COL_ENRAGE, Lang.t("rg_oaxiltso_boss_add_enrage")), nil)
+        alerts:setRow(3, Fmt.c(Fmt.RED, Lang.t("rg_oaxiltso_boss_add_enrage")), nil)
     elseif self.bossEnraged then
-        alerts:setRow(3, Fmt.c(COL_ENRAGE, Lang.t("rg_oaxiltso_boss_enraged")), nil)
+        alerts:setRow(3, Fmt.c(Fmt.RED, Lang.t("rg_oaxiltso_boss_enraged")), nil)
     elseif self.miniEnraged then
-        alerts:setRow(3, Fmt.c(COL_ADD_ENRAGE, Lang.t("rg_oaxiltso_add_enraged")), nil)
+        alerts:setRow(3, Fmt.c(Fmt.ORANGE, Lang.t("rg_oaxiltso_add_enraged")), nil)
     else
         alerts:clearRow(3)
     end

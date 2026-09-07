@@ -12,7 +12,7 @@ local ExtPI = require("external-api.PositionIcons")
 
 -- Pre-load ui modules at startup so they are never captured as part of a
 -- trial's dependency set  -  the panel must outlive any single trial.
-local Panel = require("ui.Panel")
+require("ui.Panel")
 local Menu  = require("ui.Menu")
 
 -- Every trial is resident for the whole session.  incha.txt executes each
@@ -53,7 +53,7 @@ local function OnAddOnLoaded(event, addonName)
 
     ZoneManager.onZoneChanged()
 
-    d(ADDON_TAG .. " v0.1.0 loaded  -  " .. ADDON_SLASH .. " for commands")
+    d(ADDON_TAG .. " v" .. ADDON_VERSION .. " loaded  -  " .. ADDON_SLASH .. " for commands")
 end
 
 EVENT_MANAGER:RegisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED, OnAddOnLoaded)

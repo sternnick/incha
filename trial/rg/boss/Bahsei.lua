@@ -31,14 +31,6 @@ local RockgroveCommon = require("trial.rg.RockgroveCommon")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
 
-local COL_CURSE   = "aa50ff"   -- purple (next curse)
-local COL_PORTAL  = "38bdf8"   -- sky-blue (portal label)
-local COL_PNUM    = "7b82a0"   -- slate-gray (portal number / in-progress)
-local COL_COUNT   = "888888"   -- gray (portal player count)
-local COL_TANK    = "ff2020"   -- bright red (tank exploding)
-local COL_DT      = "6699ff"   -- blue (death touch)
-local COL_NOPORTAL = "ff6030"  -- orange-red (no portal cooldown)
-local COL_SICKLE  = "cc80ff"   -- light purple (next sickle)
 
 -- -- Ability IDs ------------------------------------------------------------
 local CURSED_GROUND    = 152475   -- combatRoute: ACTION_RESULT_BEGIN -> Cursed Ground alert
@@ -46,8 +38,7 @@ local SALVO2           = 152463   -- combatRoute: ACTION_RESULT_BEGIN -> interru
 local SICKLE           = 150067   -- combatRoute: ACTION_RESULT_BEGIN -> nextSickle +15s; player alert
 local HEMORRHAGE       = 150008   -- combatRoute: ACTION_RESULT_BEGIN -> Bleeding alert (player)
 local RANCID_HAMMER    = 149922   -- combatRoute: ACTION_RESULT_BEGIN -> caAlertCast (tanks)
-local MT_ATTACK_IDS    = { [150047]=true, [150048]=true, [150065]=true }
-                                   -- combatRoute: plain -> Bahsei carve/slice/rendflesh MT detection
+-- 150047/150048/150065 (MT_ATTACK_IDS) -- reference: carve/slice/rendflesh MT detection set (unrouted)
 local DEATH_TOUCH      = 150078   -- effectRoute: EFFECT_RESULT_GAINED -> blue border + MT explosion
 local MALIGNANT_MARROW = 153421   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> nextPortal +50s
 local BITTER_MARROW    = 153423   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> numPlayersInPortal
@@ -58,12 +49,9 @@ local EYE_CCW          = 153518   -- combatRoute: ACTION_RESULT_EFFECT_GAINED ->
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes -----------------------------------------------------
-local COL_INTERRUPT = { -2, 0, true,  { 0.3, 0.6, 1.0, 0.4 }, { 0.3, 0.6, 1.0, 0.8 } }
-local COL_SICKLE    = { -2, 0, false, { 0.7, 0.2, 0.9, 0.4 }, { 0.7, 0.2, 0.9, 0.8 } }
-local COL_HAMMER    = { -2, 0, false, { 1.0, 0.5, 0.1, 0.4 }, { 1.0, 0.5, 0.1, 0.8 } }
-local COL_METEOR    = { 1.0, 0.70, 0.0, 0.5 }
 local ACT_METEOR    = { 10000, "KILL SUN!", 0.8, 0.0, 0.0, 0.9, nil }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
@@ -168,7 +156,7 @@ local function handleSalvo(self, context, alerts, abilityId,
     local _, _, isTank = GetPlayerRoles()
     if isTank then
         local dur = CastDur.get(SALVO2, FALLBACK_SALVO_DUR)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_INTERRUPT)
+        CA.interrupt_melee(abilityId, sourceUnitName, dur, Colors.ICE)
         CA.alert(nil, "Interrupt!", 0xFF2020FF, SOUNDS.CHAMPION_POINTS_COMMITTED, 2000)
     end
 end
@@ -179,7 +167,7 @@ local function handleSickle(self, context, alerts, abilityId,
     self.nextSickle = GetGameTimeMilliseconds() / 1000 + 15
     if IsUnitPlayer(unitTag) then
         local dur = CastDur.get(SICKLE, FALLBACK_SICKLE_DUR)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_SICKLE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.VOID)
     end
 end
 
@@ -195,7 +183,7 @@ local function handleRancidHammer(self, context, alerts, abilityId,
     local _, _, isTank = GetPlayerRoles()
     if isTank then
         local dur = CastDur.get(RANCID_HAMMER, FALLBACK_HAMMER_DUR)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_HAMMER)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
     end
 end
 
@@ -204,9 +192,9 @@ local function handleMeteorSwarm(self, context, alerts, abilityId, ...)
     if not context.isHM then return end
     self.nextSickle = 0   -- sickle irrelevant from here; free the slot
     CA.castAlertsStop(self.sunBarId)
-    self.sunBarId = CA.castAlertsStart(
+    self.sunBarId = CA.bar(
         abilityId, "Prime Meteor",
-        13500, 13500, COL_METEOR, ACT_METEOR)
+        13500, 13500, Colors.FLYZONE, 0.4, ACT_METEOR)
     PlaySound(SOUNDS.DUEL_START)
 end
 
@@ -293,9 +281,9 @@ local function showCursedGroundLine(self, alerts, now)
     if self.lastCursedGround > 0 then
         local T = 28 - (now - self.lastCursedGround)
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_CURSE, Lang.t("rg_bahsei_next_curse")), T)
+            alerts:setRow(1, Fmt.c(Fmt.ARCANE, Lang.t("rg_bahsei_next_curse")), T)
         else
-            alerts:setRow(1, Fmt.c(COL_CURSE, Lang.t("rg_bahsei_next_curse")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
+            alerts:setRow(1, Fmt.c(Fmt.ARCANE, Lang.t("rg_bahsei_next_curse")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
         end
     else
         alerts:clearRow(1)
@@ -308,8 +296,8 @@ local function showPortalLine(self, alerts, now, isHM)
         local delta = self.nextPortal - now
         if delta > 0 then
             alerts:setRow(2,
-                Fmt.c(COL_PORTAL, "Portal") .. " " ..
-                Fmt.c(COL_PNUM, "(" .. self.portalNumber .. ")"),
+                Fmt.c(Fmt.SKY, "Portal") .. " " ..
+                Fmt.c(Fmt.SMOKE, "(" .. self.portalNumber .. ")"),
                 delta)
         else
             local dir = self.lastPortalCW
@@ -317,9 +305,9 @@ local function showPortalLine(self, alerts, now, isHM)
                 or  Fmt.c("ff8040", Lang.t("rg_bahsei_portal_ccw"))
             local cnt = self.numPlayersInPortal
             alerts:setRow(2,
-                Fmt.c(COL_PORTAL, "Portal") .. " " .. dir ..
-                " " .. Fmt.c(COL_PNUM, Lang.t("rg_bahsei_portal_progress")) ..
-                (cnt > 0 and (" " .. Fmt.c(COL_COUNT, "(" .. cnt .. ")")) or ""),
+                Fmt.c(Fmt.SKY, "Portal") .. " " .. dir ..
+                " " .. Fmt.c(Fmt.SMOKE, Lang.t("rg_bahsei_portal_progress")) ..
+                (cnt > 0 and (" " .. Fmt.c(Fmt.GRAY, "(" .. cnt .. ")")) or ""),
                 nil)
         end
     else
@@ -333,13 +321,13 @@ local function showDeathTouchLine(self, alerts, now, isHM)
     local explodeDelta = (self.nextMtExplosion > 0) and (self.nextMtExplosion - now) or -1
     local dtDelta      = (self.lastDeathTouch  > 0) and (9 - (now - self.lastDeathTouch)) or -1
     if explodeDelta >= 0 and explodeDelta <= 3 then
-        alerts:setRow(3, Fmt.c(COL_TANK, Lang.t("rg_bahsei_tank_exploding")), explodeDelta)
+        alerts:setRow(3, Fmt.c(Fmt.RED, Lang.t("rg_bahsei_tank_exploding")), explodeDelta)
     elseif dtDelta > 0 then
-        alerts:setRow(3, Fmt.c(COL_DT, Lang.t("rg_bahsei_death_touch")), dtDelta)
+        alerts:setRow(3, Fmt.c(Fmt.FROST, Lang.t("rg_bahsei_death_touch")), dtDelta)
     elseif isHM and self.selfDoNotPortalTime > 0 then
         local noPortalDelta = self.selfDoNotPortalTime - now
         if noPortalDelta > 0 then
-            alerts:setRow(3, Fmt.c(COL_NOPORTAL, Lang.t("rg_bahsei_no_portal")), noPortalDelta)
+            alerts:setRow(3, Fmt.c(Fmt.FIRE, Lang.t("rg_bahsei_no_portal")), noPortalDelta)
         else
             alerts:clearRow(3)
         end
@@ -353,9 +341,9 @@ local function showSickleLine(self, alerts, now, isHM)
     if isHM and self.nextSickle > 0 then
         local T = self.nextSickle - now
         if T > 0 and T <= 15 then
-            alerts:setRow(4, Fmt.c(COL_SICKLE, Lang.t("rg_bahsei_next_sickle")), T)
+            alerts:setRow(4, Fmt.c(Fmt.PURPLE, Lang.t("rg_bahsei_next_sickle")), T)
         elseif T <= 0 then
-            alerts:setRow(4, Fmt.c(COL_SICKLE, Lang.t("rg_bahsei_next_sickle")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
+            alerts:setRow(4, Fmt.c(Fmt.PURPLE, Lang.t("rg_bahsei_next_sickle")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
         else
             alerts:clearRow(4)
         end

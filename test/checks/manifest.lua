@@ -85,10 +85,10 @@ if order[1] ~= "bootstrap.lua" then
 end
 
 -- -- Version strings must agree ---------------------------------------------
--- The version lives in three places and they had drifted: the manifest said
--- 0.0.1 while the load message and the LAM panel both said 0.1.0. Only the
--- manifest value is what users and Minion actually see, so a stale one there
--- misreports every install.
+-- The code-side version lives in ADDON_VERSION in bootstrap.lua; the ESO-
+-- side version lives in "## Version:" in incha.txt.  Both must match.
+-- (incha.lua and ui/Menu.lua reference ADDON_VERSION at runtime so they
+-- are always in sync with bootstrap.lua and need no separate check here.)
 local function versionIn(path, pattern, label)
     local text = read(path)
     if not text then
@@ -102,16 +102,17 @@ local function versionIn(path, pattern, label)
     return v
 end
 
-local manifestVersion = manifestText:match("##%s*Version:%s*(%S+)")
-local loadMsgVersion  = versionIn("incha.lua", 'v(%d+%.%d+%.%d+)', "load-message")
-local lamVersion      = versionIn("ui/Menu.lua", 'version%s*=%s*"(%d+%.%d+%.%d+)"', "LAM panel")
+local manifestVersion  = manifestText:match("##%s*Version:%s*(%S+)")
+local bootstrapVersion = versionIn("bootstrap.lua",
+                             'ADDON_VERSION%s*=%s*"(%d+%.%d+%.%d+)"',
+                             "ADDON_VERSION")
 
 if not manifestVersion then
     fail("NO VERSION    %s has no '## Version:' line", MANIFEST)
-elseif loadMsgVersion and lamVersion then
-    if not (manifestVersion == loadMsgVersion and manifestVersion == lamVersion) then
-        fail("VERSION DRIFT %s says %s, incha.lua prints %s, ui/Menu.lua declares %s",
-             MANIFEST, manifestVersion, loadMsgVersion, lamVersion)
+elseif bootstrapVersion then
+    if manifestVersion ~= bootstrapVersion then
+        fail("VERSION DRIFT %s says %s, bootstrap.lua ADDON_VERSION is %s",
+             MANIFEST, manifestVersion, bootstrapVersion)
     end
 end
 

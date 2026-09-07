@@ -5,6 +5,7 @@ local BossBase         = require("lib.BossBase")
 local CastDur          = require("lib.CastDur")
 local OsseinCageCommon = require("trial.oc.OsseinCageCommon")
 local Lang             = require("core.Lang")
+local Colors = require("core.Colors")
 
 -- ── Ability IDs (from OsseinCageHelper) ──────────────────────────────────
 -- Chains
@@ -38,10 +39,6 @@ local FIREBOMB_DEBUF  = 245264   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DUR
 local IMMOLATING_SPHERE= 237011   -- combatRoute: ACTION_RESULT_BEGIN → Immolating Sphere alert (player)
 
 -- ── CA colour palettes ────────────────────────────────────────────────────
-local COL_LEAP     = { -3, 0, false, { 0.6, 0,   0.9, 0.4 }, { 0.6, 0,   0.9, 0.8 } }
-local COL_LEAP_RED = { -3, 0, false, { 1,   0.1, 0.1, 0.4 }, { 1,   0.1, 0.1, 0.8 } }
-local COL_SLAM     = { -3, 0, false, { 1,   0.7, 0,   0.4 }, { 1,   0.7, 0,   0.8 } }
-local COL_SURGE    = { -3, 0, false, { 0.9, 0.9, 0.1, 0.4 }, { 0.9, 0.9, 0.1, 0.8 } }
 
 -- ── Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) ─
 local FALLBACK_DUR = 2000   -- GiantPulse / VileLeap / SeethingLeap / StormSlam / StormSurge: empirical
@@ -63,9 +60,9 @@ KazpianEncounter.stateSchema = {
     portalPhase    = 0,
     channelersDead = 0,
     -- Chain targets: populated on first/second DOMINATORS_CHAINS event,
-    -- cleared after the alert fires. nil = no chain holder tracked yet.
-    chainedA       = nil,
-    chainedB       = nil,
+    -- cleared after the alert fires. false = no chain holder tracked yet.
+    chainedA       = false,
+    chainedB       = false,
 }
 
 function KazpianEncounter.new()
@@ -103,18 +100,18 @@ end
 -- Giant Pulse: shared handler for both variants.
 local function handleGiantPulse(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_kazpian_giant_sword_bar"), dur, COL_SLAM)
+    CA.ranged(abilityId, Lang.t("oc_kazpian_giant_sword_bar"), dur, Colors.FLYZONE)
 end
 
 local function handleVileLeap(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_kazpian_vile_leap"), dur, COL_LEAP)
+    CA.ranged(abilityId, Lang.t("oc_kazpian_vile_leap"), dur, Colors.VOID)
     alerts:showAction(Lang.t("oc_kazpian_vile_leap"))
 end
 
 local function handleSeethingLeap(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_kazpian_seething_bar"), dur, COL_LEAP_RED)
+    CA.ranged(abilityId, Lang.t("oc_kazpian_seething_bar"), dur, Colors.RED)
     alerts:showAction(Lang.t("oc_kazpian_seething_leap"))
 end
 
@@ -136,13 +133,13 @@ end
 
 local function handleStormSlam(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_kazpian_storm_slam_bar"), dur, COL_SLAM)
+    CA.ranged(abilityId, Lang.t("oc_kazpian_storm_slam_bar"), dur, Colors.FLYZONE)
     alerts:showAction(Lang.t("oc_kazpian_storm_slam"))
 end
 
 local function handleStormSurge(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_kazpian_storm_surge_bar"), dur, COL_SURGE)
+    CA.ranged(abilityId, Lang.t("oc_kazpian_storm_surge_bar"), dur, Colors.LIGHTNING)
 end
 
 local function handleHeavyShock(self, context, alerts, abilityId,
@@ -227,7 +224,7 @@ function KazpianEncounter:onWipe()
     OsseinCageCommon.reset()
     self.bombDebounce:clear()
     self.portalPhase    = 0; self.channelersDead = 0
-    self.chainedA       = nil; self.chainedB = nil
+    self.chainedA       = false; self.chainedB = false
 end
 
 function KazpianEncounter:onUpdate(context, alerts)

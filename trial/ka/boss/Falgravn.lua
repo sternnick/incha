@@ -10,17 +10,15 @@ local PositionIcons = require("external-api.PositionIcons")
 local BossBase      = require("lib.BossBase")
 local CastDur       = require("lib.CastDur")
 local Log           = require("lib.Log")
+local Colors = require("core.Colors")
 
 -- -- OSI helpers (OdySupportIcons, optional) -------------------------------
 -- Textures: pulled from the live ability data so they always match the
 -- icon players see in their buff bar.  Evaluated once at load time.
 local ICON_PRISON      = GetAbilityIcon(132473)   -- FALGRAVN_PRISON
-local ICON_INSTABILITY = GetAbilityIcon(140944)   -- FALGRAVN_INSTABILITY
+-- GetAbilityIcon(140944) (ICON_INSTABILITY)  -- reference: instability buff icon (unrouted)
 local ICON_SYNERGY     = GetAbilityIcon(129936)   -- FALGRAVN_BLOPSYNERGIE
 
-local COL_PRISON      = { 0.8, 0.3, 1.0 }   -- lavender
-local COL_INSTABILITY = { 1.0, 0.6, 0.0 }   -- amber
-local COL_SYNERGY     = { 0.9, 0.1, 0.2 }   -- crimson
 
 -- -- Instability animated head-icon ------------------------------------------
 -- 40 DDS frames exported to resources/instability/; cycled at 50 ms/frame
@@ -39,7 +37,7 @@ local function instAnimTick()
         state.frame = (state.frame % INST_ANIM_FRAMES) + 1
         local tex = string.format("Incha/resources/instability/frame_%02d.dds",
                                   state.frame)
-        MechanicIcons.set(state.dn, tex, COL_INSTABILITY)
+        MechanicIcons.set(state.dn, tex, Colors.FLYZONE)
     end
 end
 
@@ -137,7 +135,7 @@ local function createConnIcons()
     for name, pos in pairs(CONN_NODES) do
         local idx  = tonumber(string.sub(name, -1)) or 1
         local icon = PositionIcons.create(pos[1], pos[2], pos[3],
-                         CONN_TEX[idx], 60, { 1, 0.3, 0.3 })
+                         CONN_TEX[idx], 60, Colors.PINK)
         if icon then icon.use = false; icons[name] = icon end
     end
     return icons
@@ -148,7 +146,7 @@ local function createBloodIcons()
     local icons = {}
     for i, node in ipairs(BLOOD_NODES) do
         local icon = PositionIcons.create(node.x, node.y, node.z,
-                         node.tex, 60, { 1, 0.6, 0.1 })
+                         node.tex, 60, Colors.AMBER)
         if icon then icon.use = false; icons[i] = icon end
     end
     return icons
@@ -159,7 +157,7 @@ local function createTorturerIcons()
     local icons = {}
     for name, pos in pairs(TORTURER_NODES) do
         local icon = PositionIcons.create(pos[1], pos[2], pos[3],
-                         TORTURER_TEX.blue, 60, { 0.3, 0.5, 1 })
+                         TORTURER_TEX.blue, 60, Colors.ICE)
         if icon then icon.use = false; icons[name] = icon end
     end
     return icons
@@ -375,7 +373,7 @@ function Falgravn:onWipe(context, alerts)
     self.osiInstability = {}
     self.osiSynergy     = {}
 
-    -- Hide world-coord position icons without discarding the handles  - 
+    -- Hide world-coord position icons without discarding the handles  -
     -- they will be shown again when the relevant mechanics fire next pull.
     showPosIcons(_posIconConn,  false)
     showPosIcons(_posIconBlood, false)
@@ -383,7 +381,7 @@ function Falgravn:onWipe(context, alerts)
     if _posIconTorturer then
         for name in pairs(TORTURER_NODES) do
             updateTorturerIcon(_posIconTorturer, name,
-                               TORTURER_TEX.blue, { 0.3, 0.5, 1 })
+                               TORTURER_TEX.blue, Colors.ICE)
         end
         showPosIcons(_posIconTorturer, false)
     end
@@ -516,8 +514,7 @@ local function handleInfuserCasts(self, context, alerts, abilityId,
                                    unitTag, sourceUnitTag, sourceUnitId, unitId,
                                    sourceUnitName, unitName)
     alerts:showAction(Lang.t("ka_falgravn_interrupt_inf"))
-    local cid = CA.alertCast(abilityId, sourceUnitName, 1000,
-        { -3, 0, false, { 0.0, 0.0, 1, 0.4 }, { 0.1, 0.1, 1, 0.8 } })
+    local cid = CA.ranged(abilityId, sourceUnitName, 1000, Colors.BLUE)
     if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
 end
 
@@ -545,9 +542,8 @@ local function handleNjordalMove(self, context, alerts, result, abilityId,
     if result == ACTION_RESULT_BEGIN and self.bMove then
         self.bMove = false
         alerts:showAction(Lang.t("ka_falgravn_move"))
-        local cid = CA.castAlertsStart(abilityId, GetAbilityName(abilityId),
-            12000, 12000,
-            { 1, 0.7, 0, 0.5 },
+        local cid = CA.bar(abilityId, GetAbilityName(abilityId),
+            12000, 12000, Colors.FLYZONE, 0.5,
             { 12000, Lang.t("ka_falgravn_move"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
         if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
     elseif result == ACTION_RESULT_EFFECT_FADED and not self.bMove then
@@ -561,9 +557,8 @@ local function handleNjordalBlock(self, context, alerts, result, abilityId,
     if result == ACTION_RESULT_BEGIN and self.bBlock then
         self.bBlock = false
         alerts:showAction(Lang.t("ka_falgravn_block_cast"))
-        local cid = CA.castAlertsStart(FALGRAVN_M_BLOCK_HEAVY, "Bloody Frenzy",
-            6500, 6500,
-            { 1, 0.7, 0, 0.5 },
+        local cid = CA.bar(FALGRAVN_M_BLOCK_HEAVY, "Bloody Frenzy",
+            6500, 6500, Colors.FLYZONE, 0.5,
             { 6500, Lang.t("ka_falgravn_block_cast"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
         if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
     elseif result == ACTION_RESULT_EFFECT_FADED and not self.bBlock then
@@ -576,8 +571,7 @@ local function handleBloodCleave(self, context, alerts, abilityId,
                                   sourceUnitName, unitName)
     alerts:showAction(Lang.t("ka_falgravn_dodge"))
     local dur = CastDur.get(FALGRAVN_M_CLEAVE, FALLBACK_DUR)
-    CA.castAlertsStart(abilityId, sourceUnitName, dur, dur,
-        { 1, 0, 0.6, 0.4 },
+    CA.bar(abilityId, sourceUnitName, dur, dur, Colors.MAGENTA, 0.4,
         { 700, Lang.t("ka_falgravn_dodge"), 1, 0, 0.6, 0.8, SOUNDS.CHAMPION_POINTS_COMMITTED })
 end
 
@@ -585,8 +579,7 @@ local function handleBloodFountain(self, context, alerts, abilityId,
                                     unitTag, sourceUnitTag, sourceUnitId, unitId,
                                     sourceUnitName, unitName)
     alerts:showAction(Lang.t("ka_falgravn_block_fountain"))
-    CA.alertCast(FALGRAVN_BLOOD_FOUNT, sourceUnitName, 3033,
-        { -3, 0, false, { 1, 0.2, 0.9, 0.4 }, { 1, 0.2, 0.9, 0.8 } })
+    CA.ranged(FALGRAVN_BLOOD_FOUNT, sourceUnitName, 3033, Colors.MAGENTA)
 end
 
 -- Lightning / connection (plain entry; deduped via bConnect flag).
@@ -671,8 +664,7 @@ local function handleOpenDoor(self, context, alerts, abilityId,
     self.openGatesDelayTimer = self:after(25000, function()
         self.openGatesDelayTimer = false
         if not IsUnitInCombat("player") then return end
-        CA.alertCast(FALGRAVN_OPEN_DOOR, capturedSrc, 7500,
-            { -3, 0, false, { 0, 0, 0.7, 0.4 }, { 0, 0, 0.7, 0.8 } })
+        CA.ranged(FALGRAVN_OPEN_DOOR, capturedSrc, 7500, Colors.BLUE)
     end)
 end
 
@@ -685,9 +677,8 @@ local function handleTorturerFeed(self, context, alerts, result, abilityId,
         if self.bStartTorturerCD then
             self.bStartTorturerCD = false
             alerts:showAction(Lang.t("ka_falgravn_kill_torturer"))
-            local cid = CA.castAlertsStart(abilityId, GetAbilityName(abilityId),
-                10000, 10000,
-                { 1, 0.7, 0, 0.5 },
+            local cid = CA.bar(abilityId, GetAbilityName(abilityId),
+                10000, 10000, Colors.FLYZONE, 0.5,
                 { 10000, Lang.t("ka_falgravn_kill_torturer"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
             if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
         end
@@ -696,7 +687,7 @@ local function handleTorturerFeed(self, context, alerts, result, abilityId,
         local name = zo_strformat("<<1>>", unitName)
         if name and name ~= "" then
             self.activeFeedTorturer = name
-            updateTorturerIcon(_posIconTorturer, name, TORTURER_TEX.yellow, { 1, 0.9, 0.1 })
+            updateTorturerIcon(_posIconTorturer, name, TORTURER_TEX.yellow, Colors.YELLOW)
         end
     elseif result == ACTION_RESULT_EFFECT_FADED then
         self.bStartTorturerCD  = true
@@ -715,7 +706,7 @@ local function handleSacrifice(self, context, alerts, result, abilityId,
     local name = zo_strformat("<<1>>", unitName)
     if name and name ~= "" then
         updateTorturerIcon(_posIconTorturer, name,
-                           TORTURER_TEX.green, { 0.1, 1, 0.3 })
+                           TORTURER_TEX.green, Colors.GREEN)
     end
     self.activeFeedTorturer = false
 end
@@ -763,13 +754,12 @@ local function handlePrisonEffect(self, context, alerts, changeType, abilityId,
         local dur = 8000
         -- Re-application on the same player: drop the stale bar first.
         CA.castAlertsStop(self.prisonBars[unitTag])
-        self.prisonBars[unitTag] = CA.castAlertsStart(
+        self.prisonBars[unitTag] = CA.bar(
             abilityId, GetAbilityName(abilityId),
-            dur, dur,
-            { 1, 0.7, 0, 0.5 },
+            dur, dur, Colors.FLYZONE, 0.5,
             { dur, Lang.t("ka_falgravn_kill_prison"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
         local dn = GetUnitDisplayName(unitTag)
-        osiSet(dn, ICON_PRISON, COL_PRISON)
+        osiSet(dn, ICON_PRISON, Colors.PURPLE)
         if dn and dn ~= "" then self.osiPrison[unitTag] = dn end
     elseif changeType == EFFECT_RESULT_FADED then
         CA.castAlertsStop(self.prisonBars[unitTag])
@@ -787,7 +777,7 @@ local function handlePrisonerFeeding(self, context, alerts, abilityId,
         if self.PRISONERS[name] == 11 then
             self.torturerCount = self.torturerCount - 1
             -- 11 stacks = prisoner dead; mark the torturer's icon red.
-            updateTorturerIcon(_posIconTorturer, name, TORTURER_TEX.red, { 1, 0.15, 0.1 })
+            updateTorturerIcon(_posIconTorturer, name, TORTURER_TEX.red, Colors.RED)
         end
     end
 end
@@ -797,7 +787,7 @@ local function handleBlopSynergie(self, context, alerts, changeType, abilityId,
     if not IsUnitPlayer(unitTag) then return end
     if changeType == EFFECT_RESULT_GAINED then
         local dn = GetUnitDisplayName(unitTag)
-        osiSet(dn, ICON_SYNERGY, COL_SYNERGY)
+        osiSet(dn, ICON_SYNERGY, Colors.CRIMSON)
         if dn and dn ~= "" then self.osiSynergy[unitTag] = dn end
     elseif changeType == EFFECT_RESULT_FADED then
         osiRemove(self.osiSynergy[unitTag])

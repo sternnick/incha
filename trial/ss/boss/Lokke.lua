@@ -11,11 +11,8 @@ local Fmt            = require("core.Fmt")
 local MapUtils       = require("lib.MapUtils")
 local CA             = require("external-api.CombatAlerts")
 local CastDur        = require("lib.CastDur")
+local Colors = require("core.Colors")
 
-local COL_LASER   = "7fffd4"   -- aquamarine (laser countdown)
-local COL_LANDING = "5cd65c"   -- light green (landing countdown)
-local COL_FLY_IN  = "ffa500"   -- orange (can fly in threshold)
-local COL_TAKE    = "d92626"   -- dark red (tomb Take action)
 
 -- -- Ability IDs ------------------------------------------------------------
 local GLACIAL_FIST    = 120838   -- combatRoute: ACTION_RESULT_BEGIN -> Block alert (player/nearby 4.5m)
@@ -60,7 +57,7 @@ local function setTombSlotRow(alerts, n, prefix, slot, now)
     if slot.taken then
         alerts:setRow(n, prefix .. Fmt.c(Fmt.CYAN,  Lang.t("ss_lokke_tomb_heal")), t)
     elseif slot.armed then
-        alerts:setRow(n, prefix .. Fmt.c(COL_TAKE,  Lang.t("ss_lokke_tomb_take")), t)
+        alerts:setRow(n, prefix .. Fmt.c(Fmt.CRIMSON,  Lang.t("ss_lokke_tomb_take")), t)
     else
         alerts:setRow(n, prefix .. Fmt.c(Fmt.CYAN,  Lang.t("ss_lokke_tomb_inc")), nil)
     end
@@ -215,10 +212,9 @@ local function makeLaserHandler(laserDelay, landingAfterLaser)
         CA.castAlertsStop(self.laserBarId)
         self.laserTime   = now + laserDelay
         self.landingTime = self.laserTime + landingAfterLaser
-        self.laserBarId  = CA.castAlertsStart(
+        self.laserBarId  = CA.bar(
             abilityId, "Laser",
-            laserDelay * 1000, laserDelay * 1000,
-            { 1, 0.7, 0, 0.5 },
+            laserDelay * 1000, laserDelay * 1000, Colors.FLYZONE, 0.5,
             { laserDelay * 1000, "LASER!", 1, 0.5, 0, 0.9, SOUNDS.NONE })
         -- Reset iceNumber once boss is airborne (~10 s in).
         -- Store the handle so onLeave can cancel it on zone exit.
@@ -244,8 +240,7 @@ local function handleGlacialFist(self, context, alerts, abilityId,
     if show then
         alerts:showAction(Lang.t("ss_lokke_block_glacial"))
         local dur = CastDur.get(GLACIAL_FIST, FALLBACK_FIST_DUR)
-        local cid = CA.alertCast(abilityId, sourceUnitName, dur,
-            { -2, 0, false, { 0.3, 0.7, 1.0, 0.4 }, { 0.3, 0.7, 1.0, 0.8 } })
+        local cid = CA.melee(abilityId, sourceUnitName, dur, Colors.ICE)
         if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
     end
 end
@@ -306,9 +301,9 @@ local function showLaserLandingLine(self, alerts, now, context)
     local laser   = self.laserTime   - now
     local landing = self.landingTime - now
     if laser > 0 then
-        alerts:setRow(4, Fmt.c(COL_LASER,   Lang.t("ss_lokke_laser")), laser)
+        alerts:setRow(4, Fmt.c(Fmt.AQUA,   Lang.t("ss_lokke_laser")), laser)
     elseif landing > 0 then
-        alerts:setRow(4, Fmt.c(COL_LANDING, Lang.t("ss_landing")),     landing)
+        alerts:setRow(4, Fmt.c(Fmt.LANDING, Lang.t("ss_landing")),     landing)
     else
         local hp = context.healthPercent
         if hp and hp > 20 then
@@ -318,7 +313,7 @@ local function showLaserLandingLine(self, alerts, now, context)
             elseif hp >= 21 then flyAt = 21
             end
             if flyAt and (hp - flyAt) <= 5 then
-                alerts:setRow(4, Fmt.c(COL_FLY_IN, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
+                alerts:setRow(4, Fmt.c(Fmt.FLYZONE, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
             else
                 alerts:clearRow(4)
             end

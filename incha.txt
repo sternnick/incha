@@ -10,6 +10,7 @@ bootstrap.lua
 
 lang/en.lua
 
+external-api/ColorDefs.lua
 external-api/CombatAlerts.lua
 external-api/MechanicIcons.lua
 external-api/PositionIcons.lua
@@ -32,6 +33,7 @@ core/EventPipeline.lua
 core/Settings.lua
 core/CombatHandler.lua
 core/Bridge.lua
+core/Colors.lua
 core/Fmt.lua
 core/Lang.lua
 

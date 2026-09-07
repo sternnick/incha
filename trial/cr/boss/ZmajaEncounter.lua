@@ -6,37 +6,7 @@ local BossBase      = require("lib.BossBase")
 local CastDur       = require("lib.CastDur")
 local Settings      = require("core.Settings")
 local Lang          = require("core.Lang")
-
--- -- Ability ID sets for mini-boss detection -------------------------------
--- Any of these firing marks that mini as active (detects +1/+2/+3 variant).
-local SIRO_IDS = {
-    [104755]=true, -- HA
-    [106601]=true, -- Jump
-    [104902]=true, -- Banner
-    [103531]=true, -- Flare
-    [110431]=true, -- Flare (execute)
-    [105765]=true, -- Dark Talons
-}
-local RELE_IDS = {
-    [105780]=true, -- HA
-    [105796]=true, -- Flux Burst jump
-    [105380]=true, -- Direct Current (interrupt)
-    [106614]=true, -- Jolt
-    [103555]=true, -- Overload incoming
-    [87346] =true, -- Overload active
-}
-local GALE_IDS = {
-    [106375]=true, -- HA
-    [106682]=true, -- Teleport jump
-    [106405]=true, -- Glacial Spikes (interrupt)
-    [106378]=true, -- Donut
-    [105151]=true, -- Hoarfrost cast
-    [110466]=true, -- Hoarfrost cast (execute)
-    [103695]=true, -- Hoarfrost debuff
-    [110516]=true, -- Hoarfrost debuff (execute)
-    [106374]=true, -- Chilling Comet
-    [106367]=true, -- Chilling Comet variant
-}
+local Colors = require("core.Colors")
 
 -- -- Ability IDs (from HowToCloudrest / CrutchAlerts) ---------------------
 
@@ -67,7 +37,7 @@ local GALE_HOARFROST   = 103695  -- Hoarfrost debuff on player - 6 s drop window
 local GALE_HOARFROST_2 = 110516  -- Hoarfrost debuff execute variant
 local GALE_HOARFROST_SY= 103697  -- Hoarfrost synergy used (drop frost now!)
 local GALE_HOARFROST_S2= 110525  -- Hoarfrost synergy execute variant
-local GALE_HOARFROST_AO= 103765  -- Hoarfrost AoE on ground
+-- 103765 (GALE_HOARFROST_AO)  -- reference: ground AoE zone; passive, no alert needed
 local GALE_COMET       = 106374  -- Chilling Comet on player - 4 s window
 local GALE_COMET_2     = 106367  -- Chilling Comet variant
 
@@ -96,12 +66,9 @@ local ZMAJA_RESET_PORT = 107478  -- Z'Maja portal-phase reset (all portals close
 local CORE_EXPOSED     = 103980
 local CORE_PICKED_UP   = 103989
 local CORE_MISSED      = 110202
-local BEAD_TICK        = 105339
-local BEAD_SPAWN       = 105363
-local BEAD_CHARGE      = 105373
+-- 105339 BEAD_TICK, 105363 BEAD_SPAWN, 105373 BEAD_CHARGE  -- reference: bead sub-mechanics; V2.0
 local OLORIME_SPEAR    = 104018
-local BREAK_AMULET     = 106023
-local MALICIOUS_SPHERE = 105291
+-- 106023 BREAK_AMULET, 105291 MALICIOUS_SPHERE              -- reference: shadow-realm mechanics; V2.0
 
 -- -- Timer durations (seconds) ---------------------------------------------
 local SIRO_JUMP_CD     = 23
@@ -112,17 +79,13 @@ local RELE_JOLT_CD     = 15
 local GALE_JUMP_CD     = 19
 local GALE_BASH_CD     = 22
 local GALE_DONUT_CD    = 22
-local HOARFROST_DROP   = 6     -- seconds until Hoarfrost is droppable
+-- HOARFROST_DROP = 6  -- reference: drop delay (unimplemented proactive timer; V2.0)
 local FLARE_WINDOW     = 7     -- Roaring Flare alert window (seconds)
-local COMET_WINDOW     = 4     -- Chilling Comet window (seconds)
+-- COMET_WINDOW = 4    -- reference: comet alert window (handler uses hardcoded ms; V2.0)
 local PORTAL_OPEN_DUR  = 75    -- portal stays open ~75 s
 local PORTAL_NEXT_CD   = 46    -- seconds until next portal after close
 
 -- -- CA colour palettes ----------------------------------------------------
-local COL_SIRO  = { -3, 0, false, { 1, 0.27, 0, 0.4 },    { 1, 0.27, 0, 0.8 } }    -- orange (fire)
-local COL_RELE  = { -3, 0, false, { 0.2, 0.6, 1, 0.4 },   { 0.2, 0.6, 1, 0.8 } }  -- blue (lightning)
-local COL_GALE  = { -3, 0, false, { 0, 0.87, 0.87, 0.4 }, { 0, 0.87, 0.87, 0.8 } } -- cyan (frost)
-local COL_ZMAJA = { -3, 0, false, { 0.6, 0, 0.8, 0.4 },   { 0.6, 0, 0.8, 0.8 } }   -- purple (shadow)
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_DARK_DUR = 6000   -- CrushingDarkness: empirical
@@ -208,7 +171,7 @@ local function handleSiroFlare(self, context, alerts, result, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("cr_zmaja_siro_flare", target))
     local dur = CastDur.get(abilityId, math.floor(FLARE_WINDOW * 1000))
-    local cid = CA.alertCast(abilityId, Lang.t("cr_zmaja_siro_flare", target), dur, COL_SIRO)
+    local cid = CA.ranged(abilityId, Lang.t("cr_zmaja_siro_flare", target), dur, Colors.FIRE)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -220,7 +183,7 @@ local function handleGaleHoarfrost(self, context, alerts, result, abilityId,
     if result == ACTION_RESULT_EFFECT_GAINED then
         local dname = GetUnitDisplayName and GetUnitDisplayName(unitTag) or nil
         if dname and dname ~= "" and Settings.trial("cr").posIconsZmaja then
-            MechanicIcons.set(dname, GetAbilityIcon(abilityId), {0, 0.87, 0.87})
+            MechanicIcons.set(dname, GetAbilityIcon(abilityId), Colors.CYAN)
         end
         if IsUnitPlayer(unitTag) then
             alerts:showAction(Lang.t("cr_zmaja_gale_frost_you"))
@@ -279,7 +242,7 @@ end
 local function handleCrushingDark(self, context, alerts, abilityId, ...)
     alerts:showAction(Lang.t("cr_zmaja_crushing_dark"))
     local dur = CastDur.get(abilityId, FALLBACK_DARK_DUR)
-    CA.alertCast(abilityId, Lang.t("cr_zmaja_crushing_kite"), dur, COL_ZMAJA)
+    CA.ranged(abilityId, Lang.t("cr_zmaja_crushing_kite"), dur, Colors.VOID)
 end
 
 local function handleSiroHa(self, context, alerts, result, abilityId,
@@ -290,7 +253,7 @@ local function handleSiroHa(self, context, alerts, result, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("cr_zmaja_siro_ha", target))
     local dur = CastDur.get(SIRO_HA, FALLBACK_HA_DUR)
-    local cid = CA.alertCast(abilityId, Lang.t("cr_zmaja_siro_ha_bar"), dur, COL_SIRO)
+    local cid = CA.ranged(abilityId, Lang.t("cr_zmaja_siro_ha_bar"), dur, Colors.FIRE)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -324,7 +287,7 @@ local function handleReleHa(self, context, alerts, result, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("cr_zmaja_rele_ha", target))
     local dur = CastDur.get(RELE_HA, FALLBACK_HA_DUR)
-    local cid = CA.alertCast(abilityId, Lang.t("cr_zmaja_rele_ha_bar"), dur, COL_RELE)
+    local cid = CA.ranged(abilityId, Lang.t("cr_zmaja_rele_ha_bar"), dur, Colors.ICE)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -375,7 +338,7 @@ local function handleGaleHa(self, context, alerts, result, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("cr_zmaja_gale_ha", target))
     local dur = CastDur.get(GALE_HA, FALLBACK_HA_DUR)
-    local cid = CA.alertCast(abilityId, Lang.t("cr_zmaja_gale_ha_bar"), dur, COL_GALE)
+    local cid = CA.ranged(abilityId, Lang.t("cr_zmaja_gale_ha_bar"), dur, Colors.CYAN)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -441,7 +404,7 @@ local FALLBACK_SPLASH_DUR = 3000  -- Shadow Splash cast duration: empirical
 local function handleShadowSplash(self, context, alerts, abilityId, ...)
     alerts:showAction(Lang.t("cr_zmaja_shadow_splash"))
     local dur = CastDur.get(abilityId, FALLBACK_SPLASH_DUR)
-    CA.alertCast(abilityId, Lang.t("cr_zmaja_shadow_splash_bar"), dur, COL_ZMAJA)
+    CA.ranged(abilityId, Lang.t("cr_zmaja_shadow_splash_bar"), dur, Colors.VOID)
     CA.alert(nil, Lang.t("common_interrupt"), 0xFF0000FF, SOUNDS.NONE, 2500)
 end
 

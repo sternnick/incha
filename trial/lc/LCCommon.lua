@@ -17,6 +17,7 @@
 local CA      = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
 local Lang    = require("core.Lang")
+local Colors = require("core.Colors")
 
 local LCCommon = {}
 
@@ -41,7 +42,6 @@ LCCommon.effectAbilityIds = { [165972] = true, [214675] = true }   -- HINDERED, 
 local FALL_SOLAR = 2500   -- Solar Flare: empirical
 
 -- ── CA colour palette ──────────────────────────────────────────────────────
-local COL_SOLAR = { -2, 0, false, { 1.0, 0.6, 0.0, 0.4 }, { 1.0, 0.6, 0.0, 0.8 } }
 
 -- ── Combat-event handler ───────────────────────────────────────────────────
 -- Handles ACTION_RESULT_BEGIN events shared across all LC encounters.
@@ -53,7 +53,7 @@ function LCCommon.handle(alerts, result, abilityId, unitTag, sourceUnitName)
     -- Dremora Spellcaster: Solar Flare (cast bar) ──────────────────────────
     if abilityId == SOLAR_FLARE then
         local dur = CastDur.get(SOLAR_FLARE, FALL_SOLAR)
-        CA.alertCast(abilityId, sourceUnitName or "Solar Flare", dur, COL_SOLAR)
+        CA.melee(abilityId, sourceUnitName or "Solar Flare", dur, Colors.AMBER)
         return true
     end
 

@@ -4,6 +4,7 @@ local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
+local Colors = require("core.Colors")
 
 -- -- Ability IDs --------------------------------------------------------------------
 local VIVIFY           = 186000   -- combatRoute: ACTION_RESULT_EFFECT_FADED -> Chimera spawned, reset timers
@@ -45,9 +46,6 @@ local CHAIN_FIRST_CD       =  5   -- first chain lightning after spawn
 local CHAIN_CD             = 20   -- subsequent chain lightning CD
 
 -- -- CA colour palettes ------------------------------------------------------------
-local COL_LIGHTNING = { -3, 0, false, { 1, 0.84, 0.4, 0.4 }, { 1, 0.84, 0.4, 0.8 } }  -- yellow
-local COL_SHRED     = { -3, 0, false, { 0.4, 0.8, 1, 0.4 }, { 0.4, 0.8, 1, 0.8 } }    -- cyan-blue
-local COL_STRIKE    = { -3, 0, false, { 1, 0.5, 0.1, 0.4 }, { 1, 0.5, 0.1, 0.8 } }    -- orange
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_DUR      = 2000   -- Lightning Bolt / Lion / Gryphon: empirical
@@ -134,18 +132,18 @@ local function handleArcticShred(self, context, alerts, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("se_chimera_arctic_shred", target))
     local dur = CastDur.get(abilityId, FALLBACK_SHRED_DUR)
-    CA.alertCast(abilityId, Lang.t("se_chimera_arctic_shred_bar"), dur, COL_SHRED)
+    CA.ranged(abilityId, Lang.t("se_chimera_arctic_shred_bar"), dur, Colors.ICE)
 end
 
 local function handleLionDoubleStrike(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("se_chimera_lion_double_bar"), dur, COL_STRIKE)
+    CA.ranged(abilityId, Lang.t("se_chimera_lion_double_bar"), dur, Colors.ORANGE)
     alerts:showAction(Lang.t("se_chimera_lion_double"))
 end
 
 local function handleGryphonPeck(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("se_chimera_gryphon_peck_bar"), dur, COL_SHRED)
+    CA.ranged(abilityId, Lang.t("se_chimera_gryphon_peck_bar"), dur, Colors.ICE)
     alerts:showAction(Lang.t("se_chimera_gryphon_peck"))
 end
 
@@ -155,7 +153,7 @@ local function handleChimeraBolt(self, context, alerts, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("se_chimera_lightning_bolt", target))
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    local cid = CA.alertCast(abilityId, Lang.t("se_chimera_bolt_bar"), dur, COL_LIGHTNING)
+    local cid = CA.ranged(abilityId, Lang.t("se_chimera_bolt_bar"), dur, Colors.GOLD)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 

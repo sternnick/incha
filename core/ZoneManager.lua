@@ -5,7 +5,6 @@ local ZoneManager = {}
 local trials      = {}
 local activeZoneId  = nil
 local activeTrial   = nil
-local activeEntry   = nil   -- the trials[] entry currently enabled
 
 --- Register a trial module for a zone.
 --- @param zoneId      number   ESO zone ID
@@ -37,7 +36,6 @@ local function disableCurrentTrial()
 
     activeTrial  = nil
     activeZoneId = nil
-    activeEntry  = nil
 end
 
 local function enableTrialForZone(zoneId)
@@ -64,7 +62,6 @@ local function enableTrialForZone(zoneId)
     end
 
     activeZoneId = zoneId
-    activeEntry  = entry
     activeTrial  = entry.module
     entry.module:enable()
 end

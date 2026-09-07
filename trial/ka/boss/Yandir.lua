@@ -3,12 +3,11 @@ local Timer = require("lib.Timer")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
 
-local COL_SKIP = "55aa55"   -- medium green (gryphon skip)
-local COL_FAIL = "cc4444"   -- red (gryphon fail HP)
 
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
 -- -- Ability IDs (from BSCHTKA_Yandir.lua) ---------------------------------
 local TOTEM_POISON       = 133515  -- combatRoute: ACTION_RESULT_BEGIN -> resets timer + Dodge alert
@@ -108,9 +107,9 @@ function Yandir:onUpdate(context, alerts)
         local earlyTag = self.bGRYPHON_SKIP_TIME > 0
             and Lang.t("ka_yandir_gryphon_early", ZO_FormatCountdownTimer(self.bGRYPHON_SKIP_TIME))
             or ""
-        alerts:setRow(2, Lang.t("ka_yandir_gryphon_label") .. " " .. Fmt.c(COL_SKIP, Lang.t("ka_yandir_gryphon_skip")) .. earlyTag, nil)
+        alerts:setRow(2, Lang.t("ka_yandir_gryphon_label") .. " " .. Fmt.c(Fmt.LEAF, Lang.t("ka_yandir_gryphon_skip")) .. earlyTag, nil)
     elseif self.bGRYPHON_SKIP_FAILHP > 0 then
-        alerts:setRow(2, Lang.t("ka_yandir_gryphon_label") .. " " .. Fmt.c(COL_FAIL, Lang.t("ka_yandir_gryphon_fail") .. Fmt.pct(self.bGRYPHON_SKIP_FAILHP)), nil)
+        alerts:setRow(2, Lang.t("ka_yandir_gryphon_label") .. " " .. Fmt.c(Fmt.CRIMSON, Lang.t("ka_yandir_gryphon_fail") .. Fmt.pct(self.bGRYPHON_SKIP_FAILHP)), nil)
     else
         local t2 = self.gryphonTimer:remaining()
         if t2 > 0 then
@@ -147,8 +146,7 @@ local function handlePoisonTotem(self, context, alerts, abilityId,
                                   sourceUnitName, unitName)
     self.totemTimer:reset()
     alerts:showAction(Lang.t("ka_yandir_dodge_poison"))
-    local cid = CA.alertCast(abilityId, sourceUnitName, 4300,
-        { -3, 0, false, { 0, 0.8, 0, 0.4 }, { 0, 0.8, 0, 0.8 } })
+    local cid = CA.ranged(abilityId, sourceUnitName, 4300, Colors.POISON)
     if cid and unitId then self.alertList[unitId] = cid end
     self.poisonTotemId = unitId  -- track for delayed second-poison bar
 end
@@ -168,8 +166,7 @@ local function handlePoisonTotemCp(self, context, alerts, abilityId,
         self.poisonTotemTimer = false
         if self.poisonTotemId ~= -1 and IsUnitInCombat("player") then
             self.BTotemCall = false
-            CA.alertCast(TOTEM_POISON_CP, capturedSrc, 4300,
-                { -3, 0, false, { 0, 0.8, 0, 0.4 }, { 0, 0.8, 0, 0.8 } })
+            CA.ranged(TOTEM_POISON_CP, capturedSrc, 4300, Colors.POISON)
         end
     end)
 end
@@ -179,8 +176,7 @@ local function handleGargoyleTotem(self, context, alerts, abilityId,
                                     sourceUnitName, unitName)
     alerts:showAction(Lang.t("ka_yandir_block_gargoyle"))
     local dur = CastDur.get(TOTEM_GARGYL, FALLBACK_DUR)
-    local cid = CA.alertCast(abilityId, "Block!!", dur,
-        { -3, 0, false, { 0.7, 0.7, 0.7, 0.4 }, { 0.7, 0.7, 0.7, 0.8 } })
+    local cid = CA.ranged(abilityId, "Block!!", dur, Colors.SILVER)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -193,8 +189,7 @@ local function handleYandirJump(self, context, alerts, abilityId,
                                  unitTag, sourceUnitTag, sourceUnitId, unitId,
                                  sourceUnitName, unitName)
     alerts:showAction(Lang.t("ka_yandir_jump_block"))
-    local cid = CA.alertCast(abilityId, Lang.t("ka_yandir_jump_block"), 3000,
-        { -3, 0, false, { 0.7, 0.7, 0.7, 0.4 }, { 0.7, 0.7, 0.7, 0.8 } })
+    local cid = CA.ranged(abilityId, Lang.t("ka_yandir_jump_block"), 3000, Colors.SILVER)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -203,8 +198,7 @@ local function handleSeaAdderSpray(self, context, alerts, abilityId,
                                     sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     alerts:showAction(Lang.t("ka_yandir_dodge_sea_adder"))
-    local cid = CA.alertCast(abilityId, sourceUnitName, 1933,
-        { -3, 0, false, { 0.7, 0.7, 0.7, 0.4 }, { 0.7, 0.7, 0.7, 0.8 } })
+    local cid = CA.ranged(abilityId, sourceUnitName, 1933, Colors.SILVER)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 

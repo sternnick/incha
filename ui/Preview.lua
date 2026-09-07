@@ -57,8 +57,8 @@ end
 function Preview.showPanel()
     ensurePanel()
     Panel.alerts.header("Falgravn [HM]")
-    Panel.alerts.info(1, "Instability: 12s")
-    Panel.alerts.info(2, "Blood Ball:   8s")
+    Panel.alerts.setRow(1, "Instability", 12)
+    Panel.alerts.setRow(2, "Blood Ball",   8)
     Panel.alerts.action("Prison on Oseias!")
 end
 

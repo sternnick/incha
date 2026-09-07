@@ -18,10 +18,6 @@ local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
 
-local COL_ELEC   = "FFD666"   -- gold-yellow (electric stacks)
-local COL_POISON = "66CC66"   -- green (poison stacks)
-local COL_REEF   = "FFD700"   -- gold (reef timer normal)
-local COL_VULN   = "ff8800"   -- orange (acidic vulnerability)
 
 -- -- Ability IDs -----------------------------------------------------------
 local BUILDING_STATIC_1    = 163575   -- effectRoute: EFFECT_RESULT_GAINED/UPDATED/FADED -> lightning stack tracker
@@ -32,7 +28,7 @@ local SHELTERED            = 163571   -- effectRoute: EFFECT_RESULT_GAINED/FADED
 local HEARTBURN            = 163692   -- combatRoute: ACTION_RESULT_BEGIN -> reef portal opens (60 s wipe timer)
 local HEARTBURN_EFFECT     = 166036   -- effectRoute: EFFECT_RESULT_GAINED -> start reef wipe timer
 local ACID_REFLUX          = 163702   -- combatRoute: ACTION_RESULT_BEGIN -> caAlertCast 10 s + 5 pool alerts
-local ACID_POOL            = 165987   -- (unused in routes  -  placed by Acid Reflux; no route needed)
+-- 165987 (ACID_POOL)  -- reference: placed by Acid Reflux; no direct route needed
 local CRAB_MONSTROUS_CLAW  = 166582   -- combatRoute: ACTION_RESULT_BEGIN -> handleHeavy (player caAlertCast)
 local CRAB_SWIPE           = 166584   -- combatRoute: ACTION_RESULT_BEGIN -> handleHeavy (player caAlertCast)
 local CRUSH                = 166019   -- combatRoute: ACTION_RESULT_BEGIN -> handleHeavy (player caAlertCast)
@@ -50,10 +46,9 @@ local SHELTERED_WINDOW     = 3        -- s: keep "CLEANSED" label brief
 
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes ----------------------------------------------------
-local COL_HEAVY   = { -2, 0, false, { 1.0, 0.35, 0.1, 0.4 }, { 1.0, 0.35, 0.1, 0.8 } }
-local COL_ACID    = { 0.4, 0.9, 0.2, 0.5 }
 local ACT_ACID    = { 8000, "MOVE OUT!", 0.3, 0.9, 0.1, 0.9, nil }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
@@ -103,7 +98,7 @@ local function handleHeavy(self, context, alerts, abilityId,
                             sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_HEAVY)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
 end
 
 -- Reef portal opening
@@ -120,8 +115,8 @@ end
 -- Acid Reflux channel + 5 pool alerts
 local function handleAcidReflux(self, context, alerts, abilityId, ...)
     CA.castAlertsStop(self.acidRefluxBarId)
-    self.acidRefluxBarId = CA.castAlertsStart(
-        abilityId, "Acid Reflux", 10000, 10000, COL_ACID, ACT_ACID)
+    self.acidRefluxBarId = CA.bar(
+        abilityId, "Acid Reflux", 10000, 10000, Colors.POISON, 0.5, ACT_ACID)
     -- Scheduled through BossBase:after so a wipe part-way through the channel
     -- cancels the remaining pool alerts instead of firing them into the reset.
     for i = 1, ACID_COUNT do
@@ -245,10 +240,10 @@ local function showLightningStacksLine(self, alerts, now)
         local warn = (stacks >= 7) and (" " .. Fmt.c(Fmt.RED, "!")) or ""
         if self.playerSheltered
            or (now - self.lastShelteredTime < SHELTERED_WINDOW) then
-            alerts:setRow(1, Fmt.c(COL_ELEC, Lang.t("dsr_reef_elec_cleansed")), nil)
+            alerts:setRow(1, Fmt.c(Fmt.GOLD, Lang.t("dsr_reef_elec_cleansed")), nil)
         else
             alerts:setRow(1,
-                Fmt.c(COL_ELEC,
+                Fmt.c(Fmt.GOLD,
                     Lang.t("dsr_reef_elec_label")
                     .. Lang.t(stacks ~= 1 and "dsr_reef_stack_p" or "dsr_reef_stack", stacks))
                 .. warn, nil)
@@ -265,10 +260,10 @@ local function showPoisonStacksLine(self, alerts, now)
         local warn = (vstacks >= 7) and (" " .. Fmt.c(Fmt.RED, "!")) or ""
         if self.playerSheltered
            or (now - self.lastShelteredTime < SHELTERED_WINDOW) then
-            alerts:setRow(2, Fmt.c(COL_POISON, Lang.t("dsr_reef_poison_cleansed")), nil)
+            alerts:setRow(2, Fmt.c(Fmt.POISON, Lang.t("dsr_reef_poison_cleansed")), nil)
         else
             alerts:setRow(2,
-                Fmt.c(COL_POISON,
+                Fmt.c(Fmt.POISON,
                     Lang.t("dsr_reef_poison_label")
                     .. Lang.t(vstacks ~= 1 and "dsr_reef_stack_p" or "dsr_reef_stack", vstacks))
                 .. warn, nil)
@@ -295,7 +290,7 @@ local function showReefWipeLines(self, alerts, now)
 
     if timers[1] then
         local t1   = timers[1]
-        local col1 = (t1.t <= 15) and Fmt.RED or COL_REEF
+        local col1 = (t1.t <= 15) and Fmt.RED or Fmt.GOLD
         alerts:setRow(3, Fmt.c(col1, Lang.t("dsr_reef_reef_timer", t1.idx)), t1.t)
     else
         alerts:clearRow(3)
@@ -303,12 +298,12 @@ local function showReefWipeLines(self, alerts, now)
 
     if timers[2] then
         local t2   = timers[2]
-        local col2 = (t2.t <= 15) and Fmt.RED or COL_REEF
+        local col2 = (t2.t <= 15) and Fmt.RED or Fmt.GOLD
         alerts:setRow(4, Fmt.c(col2, Lang.t("dsr_reef_reef_timer", t2.idx)), t2.t)
     elseif self.acidicVulnLast > 0 then
         local T = 5 - (now - self.acidicVulnLast)
         if T > 0 then
-            alerts:setRow(4, Fmt.c(COL_VULN, Lang.t("dsr_reef_acidic_vuln")), T)
+            alerts:setRow(4, Fmt.c(Fmt.ORANGE, Lang.t("dsr_reef_acidic_vuln")), T)
         else
             self.acidicVulnLast = 0
             alerts:clearRow(4)

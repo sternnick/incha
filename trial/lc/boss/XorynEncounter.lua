@@ -5,9 +5,8 @@ local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
+local Colors = require("core.Colors")
 
-local COL_CURRENT = "44CCFF"   -- sky-blue (current carrying)
-local COL_KNOT    = "FFAA44"   -- amber (arcane knot)
 
 -- ── Ability IDs ───────────────────────────────────────────────────────────
 local ARCANE_KNOT         = 213477   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DURATION / FADED → carry knot
@@ -24,9 +23,6 @@ local LUSTROUS_JAVELIN    = 223546   -- combatRoute: ACTION_RESULT_BEGIN → jav
 local CURRENT_MAX_DUR = 15.0   -- holding Fluctuating Current beyond this = death
 
 -- ── CA colour palettes ────────────────────────────────────────────────────
-local COL_NECROTIC  = { -3, 0, false, { 0.5, 0,   0.9, 0.4 }, { 0.5, 0,   0.9, 0.8 } }
-local COL_TEMPEST   = { -3, 0, false, { 0.2, 0.8, 1.0, 0.4 }, { 0.2, 0.8, 1.0, 0.8 } }
-local COL_ATRONACH  = { -3, 0, false, { 1,   0.4, 0,   0.4 }, { 1,   0.4, 0,   0.8 } }
 
 -- ── Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) ─
 local FALLBACK_BARRAGE_DUR = 3000   -- NecroticBarrage: empirical
@@ -56,7 +52,7 @@ end
 
 local function handleNecroticBarrage(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_BARRAGE_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_xoryn_barrage_bar"), dur, COL_NECROTIC)
+    CA.ranged(abilityId, Lang.t("lc_xoryn_barrage_bar"), dur, Colors.VOID)
 end
 
 local function handleAcceleratingCharge(self, context, alerts, abilityId, ...)
@@ -66,7 +62,7 @@ end
 
 local function handleTempest(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_xoryn_tempest_bar"), dur, COL_TEMPEST)
+    CA.ranged(abilityId, Lang.t("lc_xoryn_tempest_bar"), dur, Colors.ICE)
     alerts:showAction(Lang.t("lc_xoryn_tempest"))
 end
 
@@ -75,7 +71,7 @@ local function handleGlassStomp(self, context, alerts, abilityId,
                                  sourceUnitName, unitName)
     local target = (unitName and unitName ~= "") and unitName or "?"
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_xoryn_atronach_bar", target), dur, COL_ATRONACH)
+    CA.ranged(abilityId, Lang.t("lc_xoryn_atronach_bar", target), dur, Colors.ORANGE)
     if IsUnitPlayer(unitTag) then
         alerts:showAction(Lang.t("lc_xoryn_atronach_aoe"))
     end
@@ -143,7 +139,7 @@ local function showCurrentLine(self, alerts)
     if self.holdingCurrent then
         local r = self.currentTimer:remaining()
         if r > 0 then
-            alerts:setRow(1, Fmt.c(COL_CURRENT, Lang.t("lc_xoryn_current")), r)
+            alerts:setRow(1, Fmt.c(Fmt.ICE, Lang.t("lc_xoryn_current")), r)
         else
             alerts:setRow(1, Fmt.c(Fmt.RED, Lang.t("lc_xoryn_drop_now")), nil)
         end
@@ -155,7 +151,7 @@ end
 -- Line 2: Arcane Knot carrier indicator.
 local function showKnotLine(self, alerts)
     if self.holdingKnot then
-        alerts:setRow(2, Fmt.c(COL_KNOT, Lang.t("lc_xoryn_carrying_knot")), nil)
+        alerts:setRow(2, Fmt.c(Fmt.AMBER, Lang.t("lc_xoryn_carrying_knot")), nil)
     else
         alerts:clearRow(2)
     end

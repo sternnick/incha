@@ -4,19 +4,19 @@ local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
+local Colors = require("core.Colors")
 
 -- ── Ability IDs ───────────────────────────────────────────────────────────
 local PIERCING_BEAM = 219165   -- combatRoute: ACTION_RESULT_BEGIN → INTERRUPT; CD 14s first / 32s steady
 local VITRIFY       = 219083   -- combatRoute: ACTION_RESULT_BEGIN → INTERRUPT; CD  9s first / 20s steady
 
 -- ── Timer durations (seconds) ─────────────────────────────────────────────
-local BEAM_FIRST_CD    = 14.0
+-- BEAM_FIRST_CD = 14.0    -- reference: first beam delay (proactive timer; unimplemented)
 local BEAM_CD          = 32.0
-local VITRIFY_FIRST_CD =  9.0
+-- VITRIFY_FIRST_CD = 9.0  -- reference: first vitrify delay (proactive timer; unimplemented)
 local VITRIFY_CD       = 20.0
 
 -- ── CA colour palettes ────────────────────────────────────────────────────
-local COL_INTERRUPT = { -3, 0, false, { 1, 0.1, 0.1, 0.4 }, { 1, 0.1, 0.1, 0.8 } }
 
 -- ── Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) ─
 local FALLBACK_BEAM_DUR    = 2500   -- PiercingBeam: empirical
@@ -51,7 +51,7 @@ local function handlePiercingBeam(self, context, alerts, abilityId, ...)
     self.firstBeam = false
     self.piercingBeamTimer:reset(BEAM_CD)
     local dur = CastDur.get(abilityId, FALLBACK_BEAM_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_xynizata_beam_bar"), dur, COL_INTERRUPT)
+    CA.ranged(abilityId, Lang.t("lc_xynizata_beam_bar"), dur, Colors.RED)
     alerts:showAction(Lang.t("lc_xynizata_interrupt_beam"))
 end
 
@@ -59,7 +59,7 @@ local function handleVitrify(self, context, alerts, abilityId, ...)
     self.firstVitrify = false
     self.vitrifyTimer:reset(VITRIFY_CD)
     local dur = CastDur.get(abilityId, FALLBACK_VITRIFY_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_xynizata_interrupt_vitr"), dur, COL_INTERRUPT)
+    CA.ranged(abilityId, Lang.t("lc_xynizata_interrupt_vitr"), dur, Colors.RED)
     alerts:showAction(Lang.t("lc_xynizata_interrupt_vitr"))
 end
 

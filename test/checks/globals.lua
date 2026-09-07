@@ -140,7 +140,7 @@ local function scan(path)
         elseif op == "GSET" then writes[name] = true end
     end
 
-    local ok, code, reason = p:close()
+    local _, code, reason = p:close()
     if not sawListing then
         return reads, writes, firstError
             or string.format("no bytecode listing (close: %s, %s)",

@@ -14,6 +14,16 @@ local Fmt      = require("core.Fmt")
 
 local Menu = {}
 
+-- Dispatch table for /incha preview <sub> and /ip <sub>.
+-- Keys match the sub-command strings; values are the Preview functions to call.
+local PREVIEW_CMDS = {
+    panel  = Preview.showPanel,
+    inst   = Preview.showInstability,
+    border = Preview.showCaBorder,
+    alert  = Preview.showCaAlert,
+    clear  = Preview.clear,
+}
+
 local PANEL_ID = ADDON_LAM
 
 -- -- LAM panel descriptor ---------------------------------------------------
@@ -22,7 +32,7 @@ local PANEL = {
     name                = ADDON_TITLE,
     displayName         = Fmt.c(Fmt.GOLD, ADDON_TITLE),
     author              = "Oseias",
-    version             = "0.1.0",
+    version             = ADDON_VERSION,
     slashCommand        = ADDON_SLASH,
     registerForRefresh  = false,
     registerForDefaults = false,
@@ -385,11 +395,9 @@ local function handleSlash(text)
 
     elseif cmd == "preview" then
         local sub = arg:match("^%s*(%S*)")
-        if     sub == "panel"  then Preview.showPanel()
-        elseif sub == "inst"   then Preview.showInstability()
-        elseif sub == "border" then Preview.showCaBorder()
-        elseif sub == "alert"  then Preview.showCaAlert()
-        elseif sub == "clear"  then Preview.clear()
+        local fn  = PREVIEW_CMDS[sub]
+        if fn then
+            zo_callLater(fn, 200)
         else
             d(ADDON_TAG .. " preview: panel | inst | border | alert | clear")
         end
@@ -410,17 +418,10 @@ local function handlePreviewSlash(text)
     -- delay the command runs while the chat "hudui" overlay is still
     -- transitioning and hudVisible may still be false, which hides the
     -- panel immediately after showing it.
-    if sub == "panel" or sub == "inst" or sub == "border"
-                     or sub == "alert" or sub == "clear" then
+    local fn = PREVIEW_CMDS[sub]
+    if fn then
         d(ADDON_TAG .. " /ip " .. sub)
-        zo_callLater(function()
-            if     sub == "panel"  then Preview.showPanel()
-            elseif sub == "inst"   then Preview.showInstability()
-            elseif sub == "border" then Preview.showCaBorder()
-            elseif sub == "alert"  then Preview.showCaAlert()
-            elseif sub == "clear"  then Preview.clear()
-            end
-        end, 200)
+        zo_callLater(fn, 200)
     else
         d(ADDON_TAG .. " /ip  panel | inst | border | alert | clear")
     end

@@ -5,6 +5,7 @@ local BossBase = require("lib.BossBase")
 local CastDur  = require("lib.CastDur")
 local Lang     = require("core.Lang")
 local Settings = require("core.Settings")
+local Colors = require("core.Colors")
 
 -- -- Ability IDs (from SanitysEdgeHelper / SSEA data) ------------------------------
 local DEFLECT         = 184823   -- combatRoute: ACTION_RESULT_BEGIN -> Shrapnel stack counter
@@ -43,22 +44,18 @@ local HEADBUTT_3      = 185000   -- combatRoute: ACTION_RESULT_BEGIN -> Headbutt
 local OVW_LIGHTNING_1 = 183598   -- combatRoute: ACTION_RESULT_BEGIN -> Lightning alert
 local OVW_LIGHTNING_2 = 198510   -- combatRoute: ACTION_RESULT_BEGIN -> Lightning alert
 local OVW_LIGHTNING_3 = 183599   -- combatRoute: ACTION_RESULT_BEGIN -> Lightning alert
-local ARCHER_TRUE_SHOT= 184802   -- (dead constant - no route registered)
+-- 184802 (ARCHER_TRUE_SHOT)  -- deleted: no route; no mechanic planned
 
 -- -- Timer durations (seconds) -----------------------------------------------------
-local FIREBOMB_FIRST_CD  =  7.5   -- time to first firebombs from combat start
+-- FIREBOMB_FIRST_CD = 7.5  -- reference: first firebombs delay from combat start (proactive timer; unimplemented)
 local FIREBOMB_CD        = 23.5   -- pre-execute CD
 local FIREBOMB_EXEC_CD   = 11     -- execute-phase CD (after <26% HP)
 local FIREBOMB_EXEC_THOLD= 26     -- % HP that marks execute phase
 local CHAIN_CD           = 32     -- chain pull CD
-local FROST_FIRST_CD     = 17     -- first frost bomb delay
+-- FROST_FIRST_CD = 17      -- reference: first frost bomb delay (proactive timer; unimplemented)
 local FROST_CD           = 25     -- subsequent frost bomb CD
 
 -- -- CA colour palettes ------------------------------------------------------------
-local COL_FIRE  = { -3, 0, false, { 1, 0.34, 0, 0.4 }, { 1, 0.34, 0, 0.8 } }    -- orange-red
-local COL_ICE   = { -3, 0, false, { 0.6, 0.8, 1, 0.4 }, { 0.6, 0.8, 1, 0.8 } }  -- pale blue
-local COL_ELEC  = { -3, 0, false, { 1, 0.9, 0.2, 0.4 }, { 1, 0.9, 0.2, 0.8 } }  -- yellow
-local COL_BLADE = { -3, 0, false, { 0.9, 0.7, 0.3, 0.4 }, { 0.9, 0.7, 0.3, 0.8 } } -- gold
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_DUR = 2000   -- FireBombs / WamasuCharge / KnifeBlast: empirical
@@ -132,7 +129,7 @@ local function handleFireBombs(self, context, alerts, abilityId,
     local target = (unitName and unitName ~= "") and unitName or "?"
     alerts:showAction(Lang.t("se_yaseyla_fire_bombs_tgt", target))
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    local cid = CA.alertCast(abilityId, Lang.t("se_yaseyla_fire_bombs_bar"), dur, COL_FIRE)
+    local cid = CA.ranged(abilityId, Lang.t("se_yaseyla_fire_bombs_bar"), dur, Colors.FIRE)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -162,7 +159,7 @@ local function handleKnifeBlast(self, context, alerts, abilityId,
                                  sourceUnitName, unitName)
     local target = (unitName and unitName ~= "") and unitName or "?"
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("se_yaseyla_knife_blast_bar", target), dur, COL_BLADE)
+    CA.ranged(abilityId, Lang.t("se_yaseyla_knife_blast_bar", target), dur, Colors.AMBER)
     alerts:showAction(Lang.t("se_yaseyla_knife_blast", target))
 end
 
@@ -186,7 +183,7 @@ local function handleWamasuCharge(self, context, alerts, abilityId,
                                    sourceUnitName, unitName)
     local target = (unitName and unitName ~= "") and unitName or "?"
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("se_yaseyla_charge_bar", target), dur, COL_FIRE)
+    CA.ranged(abilityId, Lang.t("se_yaseyla_charge_bar", target), dur, Colors.FIRE)
 end
 
 local function handleHeadbutt(self, context, alerts, abilityId,

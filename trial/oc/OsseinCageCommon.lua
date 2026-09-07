@@ -23,6 +23,7 @@ local CA      = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
 local Lang    = require("core.Lang")
 local Fmt     = require("core.Fmt")
+local Colors = require("core.Colors")
 
 local OsseinCageCommon = {}
 
@@ -72,8 +73,6 @@ local FALL_SKULL    = 2500   -- Skullstorm: empirical
 local FALL_DETONATE = 3000   -- Detonate Soul: empirical
 
 -- -- CA bar colour palettes -------------------------------------------------
-local COL_SKULL    = { -2, 0, false, { 0.65, 0.0, 0.85, 0.4 }, { 0.65, 0.0, 0.85, 0.8 } }
-local COL_DETONATE = { -2, 0, false, { 1.0,  0.3, 0.0,  0.4 }, { 1.0,  0.3, 0.0,  0.8 } }
 
 -- -- Caustic Carrion: colour gradient (6 / 8 / 10 thresholds) --------------
 local function carrionColorCode(n)
@@ -113,7 +112,7 @@ function OsseinCageCommon.handle(alerts, result, abilityId, unitTag, sourceUnitN
     -- Skullmancer: Skullstorm (cast bar) -----------------------------------
     if abilityId == SKULLSTORM then
         local dur = CastDur.get(SKULLSTORM, FALL_SKULL)
-        CA.alertCast(abilityId, sourceUnitName or "Skullstorm", dur, COL_SKULL)
+        CA.melee(abilityId, sourceUnitName or "Skullstorm", dur, Colors.VOID)
         return true
     end
 
@@ -190,7 +189,7 @@ function OsseinCageCommon.handleEffect(alerts, changeType, abilityId, unitTag, s
         if changeType ~= EFFECT_RESULT_FADED then
             local dur = CastDur.get(DETONATE_SOUL_DB, FALL_DETONATE)
             alerts:showAction(Lang.t("oc_detonate_soul"))
-            CA.alertCast(DETONATE_SOUL_DB, Lang.t("oc_detonate_soul_bar"), dur, COL_DETONATE)
+            CA.ranged(DETONATE_SOUL_DB, Lang.t("oc_detonate_soul_bar"), dur, Colors.FIRE)
             CA.alert(nil, Lang.t("oc_detonate_soul_bar"), 0xFF4400D9, SOUNDS.NONE, dur)
         end
         return true

@@ -6,6 +6,7 @@ local CastDur          = require("lib.CastDur")
 local OsseinCageCommon = require("trial.oc.OsseinCageCommon")
 local Lang             = require("core.Lang")
 local Fmt              = require("core.Fmt")
+local Colors = require("core.Colors")
 
 -- -- Ability IDs (from OsseinCageHelper) ----------------------------------------------------------
 -- Dragons (Valneer = fire/orange, Myrinax = lightning/blue)
@@ -43,19 +44,13 @@ local TAIL_SLAM_2      = 235803   -- combatRoute: ACTION_RESULT_EFFECT_GAINED ->
 local REFLECTIVE_1     = 233321   -- combatRoute: EFFECT_GAINED -> border on; EFFECT_FADED -> border off
 local REFLECTIVE_2     = 233330   -- combatRoute: EFFECT_GAINED -> border on; EFFECT_FADED -> border off
 
-local LEAP_IDS = {
-    [TITANIC_LEAP_1]=true, [TITANIC_LEAP_2]=true, [TITANIC_LEAP_3]=true,
-    [TITANIC_LEAP_4]=true, [TITANIC_LEAP_5]=true, [TITANIC_LEAP_6]=true,
-}
+-- LEAP_IDS = { TITANIC_LEAP_1..6 }  -- reference: leap detection set (IDs routed individually)
+-- LEAP_FIRST_CD = 5.0               -- reference: first leap delay (proactive timer; unimplemented)
 
 -- -- Timer durations (seconds) ---------------------------------------------------------------------
-local LEAP_FIRST_CD = 5.0
 local LEAP_CD       = 48.0
 
 -- -- CA colour palettes ----------------------------------------------------------------------------
-local COL_FIRE      = { -3, 0, false, { 1, 0.4, 0,   0.4 }, { 1, 0.4, 0,   0.8 } }
-local COL_ICE       = { -3, 0, false, { 0.3, 0.8, 1, 0.4 }, { 0.3, 0.8, 1, 0.8 } }
-local COL_CLASH     = { -3, 0, false, { 1, 0.1, 0.1, 0.4 }, { 1, 0.1, 0.1, 0.8 } }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_DUR = 2000   -- Tail Slam: empirical
@@ -77,7 +72,7 @@ JynorahEncounter.stateSchema = {
     clashTimer   = function() return Timer.new(37.5) end,
     firstLeap    = true,
     clashActive  = false,
-    playerCurse  = nil,
+    playerCurse  = false,
 }
 
 function JynorahEncounter.new()
@@ -112,13 +107,13 @@ local function handleTailSlam(self, context, alerts, abilityId,
                                 sourceUnitName, unitName)
     local target = (unitName and unitName ~= "") and unitName or "?"
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("oc_jynorah_tail_slam_bar", target), dur, COL_CLASH)
+    CA.ranged(abilityId, Lang.t("oc_jynorah_tail_slam_bar", target), dur, Colors.RED)
 end
 
 local function handleTitanicClash(self, context, alerts, abilityId, ...)
     self.clashActive = true
     self.clashTimer:reset(37.5)
-    CA.alertCast(abilityId, Lang.t("oc_jynorah_clash_bar"), 3500, COL_CLASH)
+    CA.ranged(abilityId, Lang.t("oc_jynorah_clash_bar"), 3500, Colors.RED)
     alerts:showAction(Lang.t("oc_jynorah_titanic_clash"))
 end
 
@@ -187,11 +182,11 @@ local function handleBrimstoneSurge(self, context, alerts, abilityId,
 end
 
 local function handleColdflameStomp(self, context, alerts, abilityId, ...)
-    CA.alertCast(abilityId, Lang.t("oc_jynorah_stomp_bar"), 2000, COL_ICE)
+    CA.ranged(abilityId, Lang.t("oc_jynorah_stomp_bar"), 2000, Colors.ICE)
 end
 
 local function handleBrimstoneStomp(self, context, alerts, abilityId, ...)
-    CA.alertCast(abilityId, Lang.t("oc_jynorah_stomp_bar"), 2000, COL_FIRE)
+    CA.ranged(abilityId, Lang.t("oc_jynorah_stomp_bar"), 2000, Colors.ORANGE)
 end
 
 local function handleHeatRay(self, context, alerts, abilityId, unitTag, ...)
@@ -292,7 +287,7 @@ function JynorahEncounter:onWipe()
     OsseinCageCommon.reset()
     self.leapTimer:clear(); self.clashTimer:clear()
     self.firstLeap  = true; self.clashActive = false
-    self.playerCurse = nil
+    self.playerCurse = false
     CA.border(false, 0, "blue")
     CA.border(false, 0, "red")
     CA.border(false, 0, "yellow")

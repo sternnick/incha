@@ -27,6 +27,7 @@
 
 local CA = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 local DreadsailCommon = {}
 
 -- -- Ability IDs -----------------------------------------------------------
@@ -62,9 +63,6 @@ local DUR_MELEE  = 1500
 local DUR_RANGED = 2000
 
 -- -- CA colour palettes ----------------------------------------------------
-local COL_MELEE  = { -2, 0, false, { 1.0, 0.35, 0.1, 0.4 }, { 1.0, 0.35, 0.1, 0.8 } }
-local COL_ICE    = { -2, 0, false, { 0.3, 0.75, 1.0, 0.4 }, { 0.3, 0.75, 1.0, 0.8 } }
-local COL_SWASH  = { 0.9, 0.8, 0.0, 0.5 }
 local ACT_BLOCK  = { 6000, "BLOCK!",     0.9, 0.1, 0.1, 0.9, nil }
 local ACT_KITE   = { 5000, "KITE BACK!", 0.9, 0.5, 0.0, 0.9, nil }
 local ACT_DONUT  = { 2000, "IN DONUT",   0.9, 0.8, 0.0, 0.9, nil }
@@ -81,7 +79,7 @@ function DreadsailCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNa
     if abilityId == CASCADE_BOOT then
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, DUR_MELEE)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_ICE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.ICE)
         return true
     end
 
@@ -89,7 +87,7 @@ function DreadsailCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNa
     if abilityId == STORM_CELL then
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, DUR_MELEE)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_MELEE, ACT_DONUT)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE, ACT_DONUT)
         return true
     end
 
@@ -97,7 +95,7 @@ function DreadsailCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNa
     if abilityId == WING_SLICE then
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, DUR_MELEE)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_MELEE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
         return true
     end
 
@@ -105,7 +103,7 @@ function DreadsailCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNa
     if abilityId == HORN_STRIKE_1 or abilityId == HORN_STRIKE_2 then
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, DUR_MELEE)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_MELEE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
         return true
     end
 
@@ -113,7 +111,7 @@ function DreadsailCommon.handle(alerts, result, abilityId, unitTag, sourceUnitNa
     if abilityId == TOXIC_MUCUS then
         if not IsUnitPlayer(unitTag) then return false end
         local dur = CastDur.get(abilityId, DUR_RANGED)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_MELEE)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
         return true
     end
 
@@ -128,8 +126,8 @@ function DreadsailCommon.handleEffect(alerts, changeType, abilityId, unitTag)
     -- -- Swashbuckler: Targeted (chase for 6 s) ----------------------------
     if abilityId == SWASH_TARGETED then
         if changeType == EFFECT_RESULT_GAINED and AreUnitsEqual("player", unitTag) then
-            CA.castAlertsStart(abilityId, "Swashbuckler targets you!",
-                6000, 6000, COL_SWASH, ACT_BLOCK)
+            CA.bar(abilityId, "Swashbuckler targets you!",
+                6000, 6000, Colors.LIGHTNING, 0.5, ACT_BLOCK)
             PlaySound(SOUNDS.DUEL_START)
         end
         return true
@@ -138,8 +136,8 @@ function DreadsailCommon.handleEffect(alerts, changeType, abilityId, unitTag)
     -- -- Swashbuckler: Aperture (kite daggers for 5 s) ---------------------
     if abilityId == SWASH_APERTURE then
         if changeType == EFFECT_RESULT_GAINED and AreUnitsEqual("player", unitTag) then
-            CA.castAlertsStart(abilityId, "Swashbuckler daggers",
-                5000, 5000, COL_SWASH, ACT_KITE)
+            CA.bar(abilityId, "Swashbuckler daggers",
+                5000, 5000, Colors.LIGHTNING, 0.5, ACT_KITE)
             PlaySound(SOUNDS.DUEL_START)
         end
         return true

@@ -4,9 +4,8 @@ local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
+local Colors = require("core.Colors")
 
-local COL_DARK  = "FFAA44"   -- amber/orange (Ryelaz dark side)
-local COL_LIGHT = "8888FF"   -- periwinkle (Zilyesset light side)
 
 -- ── Ability IDs ───────────────────────────────────────────────────────────
 local BRILLIANT_ANNIHILATION = 214187   -- combatRoute: ACTION_RESULT_BEGIN → light side room wipe; STACK
@@ -15,7 +14,6 @@ local PORCIN_LIGHT           = 219329   -- combatRoute: ACTION_RESULT_EFFECT_GAI
 local PORCIN_DARK            = 219330   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DURATION / FADED → player on Zilyesset (light) side
 
 -- ── CA colour palettes ────────────────────────────────────────────────────
-local COL_ANNIHIL = { -3, 0, false, { 1, 0.65, 0, 0.4 }, { 1, 0.65, 0, 0.8 } }
 
 -- ── Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) ─
 local FALLBACK_DUR = 3000   -- Annihilation channel: empirical
@@ -47,7 +45,7 @@ local function makeAnnihilHandler(label)
     return { result = ACTION_RESULT_BEGIN,
         fn = function(self, context, alerts, abilityId, ...)
         local dur = CastDur.get(abilityId, FALLBACK_DUR)
-        CA.alertCast(abilityId, Lang.t("lc_ryelaz_annihil_action"), dur, COL_ANNIHIL)
+        CA.ranged(abilityId, Lang.t("lc_ryelaz_annihil_action"), dur, Colors.FLYZONE)
         alerts:showAction(label)
     end }
 end
@@ -81,9 +79,9 @@ end
 
 function RyelazEncounter:onUpdate(context, alerts)
     if self.playerSide == "ryelaz" then
-        alerts:setRow(1, Fmt.c(COL_DARK,  Lang.t("lc_ryelaz_side_dark")), nil)
+        alerts:setRow(1, Fmt.c(Fmt.AMBER,  Lang.t("lc_ryelaz_side_dark")), nil)
     elseif self.playerSide == "zilyesset" then
-        alerts:setRow(1, Fmt.c(COL_LIGHT, Lang.t("lc_ryelaz_side_light")), nil)
+        alerts:setRow(1, Fmt.c(Fmt.FROST, Lang.t("lc_ryelaz_side_light")), nil)
     else
         alerts:clearRow(1)
     end

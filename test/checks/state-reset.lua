@@ -166,15 +166,18 @@ for line in manifestText:gmatch("[^\r\n]+") do
                             local key, val = schemaLine:match("^%s*([%w_]+)%s*=%s*(.-),?%s*$")
                             if key and not val:match("statecheck:%s*exempt")
                                and not (key == "alertList" and cleansAlerts) then
-                                -- "reset" = onWipe (or a helper it calls) mentions the
-                                -- field at all: assigning it, calling a method on it, or
-                                -- clearing it in a loop.
-                                local touched = scanText:match("self%." .. key .. "%W")
-                                if not touched and not grandfathered[key] then
-                                    if val == "nil" then
-                                        fail("NIL ENTRY     %s  %s.%s = nil is invisible to the pairs() loop in lib/BossBase.lua:42  -  a table constructor cannot declare a nil field",
-                                             entry, clsName, key)
-                                    else
+                                -- NIL ENTRY: `= nil` in a table constructor is a no-op;
+                                -- pairs() never sees the key.  Flag unconditionally —
+                                -- it is always wrong, touched or not.
+                                if val == "nil" then
+                                    fail("NIL ENTRY     %s  %s.%s = nil is invisible to the pairs() loop in lib/BossBase.lua:42  -  a table constructor cannot declare a nil field",
+                                         entry, clsName, key)
+                                else
+                                    -- "reset" = onWipe (or a helper it calls) mentions the
+                                    -- field at all: assigning it, calling a method on it, or
+                                    -- clearing it in a loop.
+                                    local touched = scanText:match("self%." .. key .. "%W")
+                                    if not touched and not grandfathered[key] then
                                         fail("NOT RESET     %s  %s.%s is in stateSchema but %s:onWipe never touches it",
                                              entry, clsName, key, clsName)
                                     end

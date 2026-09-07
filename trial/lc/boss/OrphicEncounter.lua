@@ -4,6 +4,7 @@ local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
 local Lang = require("core.Lang")
+local Colors = require("core.Colors")
 
 -- ── Ability IDs ───────────────────────────────────────────────────────────
 local THUNDER_THRALL  = 214383   -- combatRoute: ACTION_RESULT_BEGIN → Xoryn jump; timer 25.5s / 8s first
@@ -15,14 +16,12 @@ local XORYN_IMMUNE_1  = 217987   -- combatRoute: ACTION_RESULT_EFFECT_GAINED / F
 local XORYN_IMMUNE_2  = 219545   -- combatRoute: ACTION_RESULT_EFFECT_GAINED / FADED → Xoryn away variant
 
 -- ── Timer durations (seconds) ─────────────────────────────────────────────
-local THRALL_FIRST_CD =  8.0    -- first Thrall after Xoryn returns
+-- THRALL_FIRST_CD = 8.0  -- reference: first Thrall delay after Xoryn returns (proactive timer; unimplemented)
 local THRALL_CD       = 25.5   -- steady-state Thrall CD
-local FLOOD_FIRST_CD  =  3.0    -- first Flood after Xoryn returns
+-- FLOOD_FIRST_CD = 3.0   -- reference: first Flood delay after Xoryn returns (proactive timer; unimplemented)
 local FLOOD_CD        = 21.5   -- steady-state Flood CD
 
 -- ── CA colour palettes ────────────────────────────────────────────────────
-local COL_LIGHTNING = { -3, 0, false, { 0.9, 0.9, 0.1, 0.4 }, { 0.9, 0.9, 0.1, 0.8 } }
-local COL_CRYSTAL   = { -3, 0, false, { 0.7, 0.3, 1.0, 0.4 }, { 0.7, 0.3, 1.0, 0.8 } }
 
 -- ── Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) ─
 local FALLBACK_DUR = 2000   -- Shield Throw: empirical
@@ -83,7 +82,7 @@ end
 
 local function handleBreakout(self, context, alerts, abilityId, unitTag, ...)
     if not IsUnitPlayer(unitTag) then return end
-    CA.alertCast(abilityId, Lang.t("lc_orphic_break_out_bar"), 3000, COL_CRYSTAL)
+    CA.ranged(abilityId, Lang.t("lc_orphic_break_out_bar"), 3000, Colors.ARCANE)
     alerts:showAction(Lang.t("lc_orphic_break_crystal"))
 end
 
@@ -92,7 +91,7 @@ local function handleShieldThrow(self, context, alerts, abilityId,
                                   sourceUnitName, unitName)
     local target = (unitName and unitName ~= "") and unitName or "?"
     local dur = CastDur.get(abilityId, FALLBACK_DUR)
-    CA.alertCast(abilityId, Lang.t("lc_orphic_shield_throw", target), dur, COL_LIGHTNING)
+    CA.ranged(abilityId, Lang.t("lc_orphic_shield_throw", target), dur, Colors.LIGHTNING)
 end
 
 local function handleColorChange(self, context, alerts, abilityId, ...)

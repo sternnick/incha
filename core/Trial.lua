@@ -55,7 +55,7 @@ function Trial.create(options)
         alerts = AlertSink.new(options.alerts),
         enabled = false,
         -- The live boss instance for the current encounter; nil between bosses.
-        -- Always a fresh object created by the boss class's new() factory  - 
+        -- Always a fresh object created by the boss class's new() factory  -
         -- never the class prototype itself.
         activeBoss = nil,
         -- Only gates the cosmetic health-rule text (and the AlertSink calls

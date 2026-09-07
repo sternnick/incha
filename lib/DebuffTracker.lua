@@ -16,7 +16,7 @@
 ---   local T = dt:remaining()    -- seconds left (0 when idle or expired)
 ---   if T > 0 then
 ---       local name = dt:playerName() or "?"
----       alerts:showInfo(n, "Debuff on " .. name .. ": " .. T .. "s")
+---       alerts:setRow(n, "Debuff on " .. name, T)
 ---   end
 
 local Timer = require("lib.Timer")

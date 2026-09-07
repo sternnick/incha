@@ -3,13 +3,12 @@ local Timer    = require("lib.Timer")
 local Lang     = require("core.Lang")
 local Fmt      = require("core.Fmt")
 
-local COL_FOG_SAFE = "6699ff"   -- blue (fog duration safe window)
-local COL_FOG_WARN = "ff6666"   -- pink-red (fog ends soon, <= 5 s)
 
 local CA            = require("external-api.CombatAlerts")
 local PositionIcons = require("external-api.PositionIcons")
 local BossBase      = require("lib.BossBase")
 local Settings      = require("core.Settings")
+local Colors = require("core.Colors")
 
 -- -- Ability IDs (from BSCHTKA_Vrol.lua) -----------------------------------
 local VROL_PORTAL_CAST  = 133994  -- combatRoute: ACTION_RESULT_BEGIN -> reset portal timer + alert
@@ -143,8 +142,7 @@ local function handlePortalCast(self, context, alerts, abilityId,
     self.portalTimer:reset()
     alerts:showAction(Lang.t("ka_vrol_kill_conjurer"))
     -- Use portal kill-time ability ID for the icon (matches BSCHTKA).
-    CA.alertCast(VROL_PORTAL_KTIME, sourceUnitName, 3000,
-        { -3, 0, false, { 0.7, 0.2, 0.9, 0.4 }, { 0.7, 0.2, 0.9, 0.8 } })
+    CA.ranged(VROL_PORTAL_KTIME, sourceUnitName, 3000, Colors.VOID)
 end
 
 local function handleFogCast(self, context, alerts, abilityId,
@@ -154,8 +152,7 @@ local function handleFogCast(self, context, alerts, abilityId,
     self.fogEndTime  = GetGameTimeMilliseconds() + FOG_DURATION * 1000
     self.fogHitCount = 0
     alerts:showAction(Lang.t("ka_vrol_dodge_fog"))
-    local cid = CA.alertCast(abilityId, sourceUnitName, 1000,
-        { -3, 0, false, { 0.0, 0.0, 1, 0.4 }, { 0.1, 0.1, 1, 0.8 } })
+    local cid = CA.ranged(abilityId, sourceUnitName, 1000, Colors.BLUE)
     if cid and unitId then self.alertList[unitId] = cid end
 end
 
@@ -175,9 +172,8 @@ local function handleHarpoon(self, context, alerts, abilityId,
                               sourceUnitName, unitName)
     self.conduitTimer:reset()
     alerts:showAction(Lang.t("ka_vrol_kill_harpoon"))
-    local cid = CA.castAlertsStart(abilityId, GetAbilityName(abilityId),
-        16000, 16000,
-        { 1, 0.7, 0, 0.5 },
+    local cid = CA.bar(abilityId, GetAbilityName(abilityId),
+        16000, 16000, Colors.FLYZONE, 0.5,
         { 16000, Lang.t("ka_vrol_harpoon_action"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
     if cid and unitId then self.alertList[unitId] = cid end
 end
@@ -207,10 +203,9 @@ local function handlePortalKillTime(self, context, alerts, changeType, abilityId
     if changeType == EFFECT_RESULT_GAINED then
         self.portalKillExpires = GetGameTimeMilliseconds() + 20000
         alerts:showAction(Lang.t("ka_vrol_kill_conjurer_20s"))
-        self.portalKillBarId = CA.castAlertsStart(
+        self.portalKillBarId = CA.bar(
             abilityId, GetAbilityName(abilityId),
-            20000, 20000,
-            { 1, 0.7, 0, 0.5 },
+            20000, 20000, Colors.FLYZONE, 0.5,
             { 20000, Lang.t("ka_vrol_kill_conjurer"), 0.8, 0, 0, 0.9, SOUNDS.NONE })
 
     elseif changeType == EFFECT_RESULT_FADED then
@@ -240,7 +235,7 @@ function Vrol:onUpdate(context, alerts)
     local fogRemMs = self.fogEndTime - now
     if fogRemMs > 0 then
         local s   = fogRemMs / 1000
-        local col = (s <= 5) and COL_FOG_WARN or COL_FOG_SAFE
+        local col = (s <= 5) and Fmt.PINK or Fmt.ICE
         alerts:setRow(1, Fmt.c(col, Lang.t("ka_vrol_fog_clears")), s)
     else
         if self.fogEndTime > 0 then self.fogEndTime = 0 end   -- auto-clear stale timestamp

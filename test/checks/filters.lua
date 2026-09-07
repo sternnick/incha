@@ -138,14 +138,14 @@ end
 for _, path in ipairs(bossSourceFiles()) do
     local f = io.open(path, "r")
     if f then
-        local current, seen, startLine, lineNo = nil, nil, 0, 0
+        local current, seen, lineNo = nil, nil, 0
         for line in (f:read("*a") .. "\n"):gmatch("([^\n]*)\n") do
             lineNo = lineNo + 1
 
             if not current then
                 for _, name in ipairs(ROUTE_TABLES) do
                     if line:match("%." .. name .. "%s*=%s*{") then
-                        current, seen, startLine = name, {}, lineNo
+                        current, seen = name, {}
                         break
                     end
                 end

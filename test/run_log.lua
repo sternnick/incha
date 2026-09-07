@@ -33,6 +33,12 @@ local EsoApi     = require("harness.eso_api")
 local UnitTracker = require("harness.unit_tracker")
 local LogReader  = require("harness.log_reader")
 
+-- Pre-load the English string table so core.Lang resolves boss .name fields
+-- (e.g. Lokke.name = Lang.t("boss_lokkestiiz") → "Lokkestiiz").
+-- In the real game, incha.txt ensures lang/en.lua is loaded before core/Lang;
+-- here we replicate that ordering by requiring it before any trial Factory.
+require("lang.en")
+
 -- -- Zone -> trial configuration --------------------------------------------
 -- The boss list and its ORDER are read from the real trial/<id>/Factory.lua
 -- at run time, not restated here.  BossRegistry assigns ids 1..N from array
@@ -78,10 +84,11 @@ local function makeAlertHandlers()
             table.insert(capturedAlerts, { ms = currentMs, type = "header", text = text })
             print(string.format("[%9dms] HEADER  %s", currentMs, text))
         end,
-        info      = function(n, text)
-            -- Info lines are high-frequency timer ticks; suppress to reduce noise.
-            -- table.insert(capturedAlerts, { ms=currentMs, type="info", n=n, text=text })
-        end,
+        -- setRow / clearRow are called by onUpdate display loops, not by
+        -- combat/effect handlers, so they are no-ops here but must exist to
+        -- prevent method-on-nil errors if a handler ever calls them directly.
+        setRow     = function() end,
+        clearRow   = function() end,
         hideAction = function() end,
         clear      = function() end,
     }
@@ -164,6 +171,13 @@ local function replayTrial(cfg, entries, tracker)
         bosses  = 0,
     }
 
+    -- Per-ability coverage tracking.
+    -- bossSeen[bossClass] = { combat = {[id]=true}, effect = {[id]=true} }
+    -- bossOrder preserves the order bosses were first activated (for report).
+    local bossSeen  = {}
+    local bossOrder = {}
+    local activeClass = nil   -- currently active boss CLASS (not instance)
+
     -- Wire ESO stubs
     EsoApi.setZoneId(cfg.zoneId)
     EsoApi.setTracker(tracker)
@@ -199,15 +213,10 @@ local function replayTrial(cfg, entries, tracker)
 
         -- -- Unit tracking -----------------------------------------------
         elseif et == "UNIT_ADDED" and e.unitId then
-            local info = tracker:addUnit(e)
+            tracker:addUnit(e)
 
             -- Only try to activate a boss while we're inside the trial zone.
             if e.isBoss and EsoApi.getCurrentTime() > 0 then
-                local currentZone = package.loaded["test_current_zone"] or cfg.zoneId
-                -- Check if we're in the right zone (currentZone updated by ZONE_CHANGED above)
-                -- Workaround: use the EsoApi zone and compare against trial's zone.
-                -- We'll rely on the fact that boss UNIT_ADDEDs only occur while in-zone.
-
                 local key = hints[e.name]
                 local bossClass
 
@@ -218,14 +227,18 @@ local function replayTrial(cfg, entries, tracker)
                     bossClass = trial.registry:findByName(e.name)
                 end
 
+                -- Boss units not in this trial's registry are skipped silently
+                -- (Sea Adder, companion mobs, etc. are boss-flagged adds).
                 if bossClass then
                     injectBoss(trial, bossClass)
+                    activeClass = bossClass
+                    if not bossSeen[bossClass] then
+                        bossSeen[bossClass] = { combat = {}, effect = {} }
+                        bossOrder[#bossOrder + 1] = bossClass
+                    end
                     stats.bosses = stats.bosses + 1
                     print(string.format("[%9dms] BOSS    %s activated (key=%s)",
                         e.ms, e.name, bossClass.key or "?"))
-                else
-                    -- Boss unit not in this trial's registry  -  skip silently.
-                    -- (Sea Adder, companion mobs, etc. are boss-flagged adds.)
                 end
             end
 
@@ -239,6 +252,7 @@ local function replayTrial(cfg, entries, tracker)
                     info.isBoss and (hints[info.name] or ""))
                 if removedClass and removedClass.key == activeKey then
                     clearBoss(trial)
+                    activeClass = nil
                     print(string.format("[%9dms] BOSS    %s removed", e.ms, info.name))
                 end
             end
@@ -275,6 +289,9 @@ local function replayTrial(cfg, entries, tracker)
                 else
                     stats.combat = stats.combat + 1
                     stats.alerts = stats.alerts + (#capturedAlerts - alertsBefore)
+                    if activeClass then
+                        bossSeen[activeClass].combat[e.abilityId] = true
+                    end
                 end
             end
 
@@ -300,6 +317,9 @@ local function replayTrial(cfg, entries, tracker)
                 else
                     stats.effect = stats.effect + 1
                     stats.alerts = stats.alerts + (#capturedAlerts - alertsBefore)
+                    if activeClass then
+                        bossSeen[activeClass].effect[e.abilityId] = true
+                    end
                 end
             end
         end
@@ -307,6 +327,64 @@ local function replayTrial(cfg, entries, tracker)
 
     -- Cleanup
     trial.pipeline:disable()
+
+    -- -- Per-ability coverage report -----------------------------------------
+    -- For each boss that appeared, compare every combatRoutes / effectRoutes
+    -- entry against the ability IDs that actually fired during that boss's
+    -- tenure.  NEVER SEEN entries are the candidates for the F2 / F4 mechanic
+    -- gaps review (abilities declared but never wired to a real event in the
+    -- log).  A NEVER SEEN result is not necessarily a bug in the boss code:
+    -- it may just mean the fixture log does not contain that mechanic.
+    local neverSeen = 0
+    if #bossOrder > 0 then
+        print("\n-- Per-ability coverage -------------------------------------")
+        for _, bossClass in ipairs(bossOrder) do
+            local seen = bossSeen[bossClass]
+            local key  = bossClass.key or "?"
+            local missC, missE = 0, 0
+
+            if bossClass.combatRoutes then
+                for id in pairs(bossClass.combatRoutes) do
+                    if not seen.combat[id] then missC = missC + 1 end
+                end
+            end
+            if bossClass.effectRoutes then
+                for id in pairs(bossClass.effectRoutes) do
+                    if not seen.effect[id] then missE = missE + 1 end
+                end
+            end
+
+            local totalC = bossClass.combatRoutes and
+                (function() local n=0; for _ in pairs(bossClass.combatRoutes) do n=n+1 end; return n end)() or 0
+            local totalE = bossClass.effectRoutes and
+                (function() local n=0; for _ in pairs(bossClass.effectRoutes) do n=n+1 end; return n end)() or 0
+
+            print(string.format("  %-16s  combat %d/%d  effect %d/%d",
+                key,
+                totalC - missC, totalC,
+                totalE - missE, totalE))
+
+            if missC + missE > 0 then
+                if bossClass.combatRoutes then
+                    for id in pairs(bossClass.combatRoutes) do
+                        if not seen.combat[id] then
+                            print(string.format("    NEVER SEEN  COMBAT  %d", id))
+                        end
+                    end
+                end
+                if bossClass.effectRoutes then
+                    for id in pairs(bossClass.effectRoutes) do
+                        if not seen.effect[id] then
+                            print(string.format("    NEVER SEEN  EFFECT  %d", id))
+                        end
+                    end
+                end
+            end
+
+            neverSeen = neverSeen + missC + missE
+        end
+    end
+    stats.neverSeen = neverSeen
 
     return stats
 end
@@ -389,8 +467,10 @@ local function main(args)
         .. "  EFFECT_CHANGED entries processed: %d\n"
         .. "  Bosses activated                : %d\n"
         .. "  Alerts fired                    : %d\n"
-        .. "  Handler errors                  : %d\n",
-        stats.combat, stats.effect, stats.bosses, stats.alerts, stats.errors))
+        .. "  Handler errors                  : %d\n"
+        .. "  Route entries never seen        : %d\n",
+        stats.combat, stats.effect, stats.bosses, stats.alerts, stats.errors,
+        stats.neverSeen or 0))
 
     os.exit(stats.errors > 0 and 1 or 0)
 end

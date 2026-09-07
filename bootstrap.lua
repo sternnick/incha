@@ -15,13 +15,14 @@
 local _n = "incha"
 local _t = _n:sub(1, 1):upper() .. _n:sub(2)  -- title-case: "Incha"
 
-ADDON_NAME   = _n                -- folder name  -  matches EVENT_ADD_ON_LOADED
-ADDON_TITLE  = _t                -- display name  -  "Incha"
-ADDON_TAG    = "|cFFD700[" .. _t .. "]|r"  -- coloured chat prefix  -  "[Incha]"
-ADDON_SLASH  = "/" .. _n         -- slash command  -  "/incha"
-ADDON_SV     = _t .. "_SV"      -- SavedVariables key  -  "Incha_SV"
-ADDON_PREFIX = _t .. "_"        -- event/handler name prefix  -  "Incha_"
-ADDON_LAM    = _t .. "Settings"  -- LibAddonMenu panel ID  -  "InchaSettings"
+ADDON_NAME    = _n                -- folder name  -  matches EVENT_ADD_ON_LOADED
+ADDON_TITLE   = _t                -- display name  -  "Incha"
+ADDON_TAG     = "|cFFD700[" .. _t .. "]|r"  -- coloured chat prefix  -  "[Incha]"
+ADDON_SLASH   = "/" .. _n         -- slash command  -  "/incha"
+ADDON_SV      = _t .. "_SV"      -- SavedVariables key  -  "Incha_SV"
+ADDON_PREFIX  = _t .. "_"        -- event/handler name prefix  -  "Incha_"
+ADDON_LAM     = _t .. "Settings"  -- LibAddonMenu panel ID  -  "InchaSettings"
+ADDON_VERSION = "0.1.0"           -- keep in sync with ## Version: in incha.txt
 -- --------------------------------------------------------------------------
 
 package = { loaded = {} }

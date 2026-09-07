@@ -15,9 +15,6 @@ local Timer          = require("lib.Timer")
 local Lang           = require("core.Lang")
 local Fmt            = require("core.Fmt")
 
-local COL_FLARE   = "e51919"   -- fire-orange (flare / cataclysm)
-local COL_LANDING = "5cd65c"   -- light green (landing countdown)
-local COL_FLY_IN  = "ffa500"   -- orange (can fly in threshold)
 
 -- -- Ability IDs ------------------------------------------------------------
 local ATRO_SPAWN    = 119549   -- combatRoute: ACTION_RESULT_BEGIN -> Kill Atro alert
@@ -28,9 +25,8 @@ local CATACLYSM     = 122598   -- combatRoute: ACTION_RESULT_BEGIN -> caAlertCas
 
 local CA = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
--- -- CA colour palettes -----------------------------------------------------
-local COL_GEYSER = { -2, 0, false, { 1.0, 0.4, 0.0, 0.4 }, { 1.0, 0.4, 0.0, 0.8 } }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_GEYSER_DUR = 2500   -- LavaGeyser: empirical
@@ -115,7 +111,7 @@ local function handleLavaGeyser(self, context, alerts, abilityId,
     if show then
         alerts:showAction(Lang.t("ss_yolna_dodge_geyser"))
         local dur = CastDur.get(LAVA_GEYSER, FALLBACK_GEYSER_DUR)
-        CA.alertCast(abilityId, sourceUnitName, dur, COL_GEYSER)
+        CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
     end
 end
 
@@ -133,10 +129,9 @@ local function handleCataclysm(self, context, alerts, abilityId, ...)
     self.cataTimer:reset(dur / 1000)
     self.landingTimer:reset(dur / 1000 + 6.8)
     CA.castAlertsStop(self.cataBarId)
-    self.cataBarId = CA.castAlertsStart(
+    self.cataBarId = CA.bar(
         abilityId, "Cataclysm",
-        dur, dur,
-        { 0.9, 0.2, 0.1, 0.5 },
+        dur, dur, Colors.FIRE, 0.5,
         { dur, "Cata Ends!", 0.9, 0.2, 0.1, 0.9, SOUNDS.NONE })
 end
 
@@ -155,7 +150,7 @@ local function showFlareLine(self, alerts, now)
     if self.nextFlareTime > 0 then
         local T = self.nextFlareTime - now
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_FLARE, Lang.t("ss_yolna_next_flare")), T)
+            alerts:setRow(1, Fmt.c(Fmt.CRIMSON, Lang.t("ss_yolna_next_flare")), T)
         else
             alerts:clearRow(1)   -- brief gap between flares; CombatAlerts handles the visible warning
         end
@@ -168,7 +163,7 @@ end
 local function showCataLine(self, alerts)
     local cataLeft = self.cataTimer:remaining()
     if cataLeft > 0 then
-        alerts:setRow(2, Fmt.c(COL_FLARE, Lang.t("ss_yolna_cataclysm_ends")), cataLeft)
+        alerts:setRow(2, Fmt.c(Fmt.CRIMSON, Lang.t("ss_yolna_cataclysm_ends")), cataLeft)
     else
         alerts:clearRow(2)
     end
@@ -178,7 +173,7 @@ end
 local function showLandingOrFlyLine(self, alerts, context)
     local landing = self.landingTimer:remaining()
     if landing > 0 then
-        alerts:setRow(4, Fmt.c(COL_LANDING, Lang.t("ss_landing")), landing)
+        alerts:setRow(4, Fmt.c(Fmt.LANDING, Lang.t("ss_landing")), landing)
     else
         local hp = context.healthPercent
         if hp and hp > 25 then
@@ -188,7 +183,7 @@ local function showLandingOrFlyLine(self, alerts, context)
             elseif hp >= 26 then flyAt = 26
             end
             if flyAt and (hp - flyAt) <= 5 then
-                alerts:setRow(4, Fmt.c(COL_FLY_IN, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
+                alerts:setRow(4, Fmt.c(Fmt.FLYZONE, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
             else
                 alerts:clearRow(4)
             end

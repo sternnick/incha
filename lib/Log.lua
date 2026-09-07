@@ -29,12 +29,10 @@ function Log.debug(template, ...)
     d(PREFIX .. string.format(template, ...))
 end
 
---- Same as debug but survives a future "warn-only" mode where debug is
---- suppressed.  Warn if something is unexpected but not fatal.
+--- Always emits, regardless of the debug flag.  Use for unexpected-state
+--- conditions (nil unit, unrecognised boss, bad coordinates) that players
+--- need to see even without enabling debug mode.
 function Log.warn(template, ...)
-    if not enabled then
-        return
-    end
     d(PREFIX .. "[WARN] " .. string.format(template, ...))
 end
 

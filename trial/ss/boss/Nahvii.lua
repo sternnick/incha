@@ -25,13 +25,6 @@ local Timer          = require("lib.Timer")
 local Lang           = require("core.Lang")
 local Fmt            = require("core.Fmt")
 
-local COL_METEOR  = "f51414"   -- red-orange (meteor warning)
-local COL_PORTAL  = "7fffd4"   -- aquamarine (portal / interrupt)
-local COL_FIRE    = "e51919"   -- fire-orange (fire storm)
-local COL_WIPE    = "8a2be2"   -- blueviolet (portal wipe)
-local COL_LANDING = "5cd65c"   -- light green (landing countdown)
-local COL_FLY_IN  = "ffa500"   -- orange (can fly in threshold)
-local COL_TARGET  = "ff9900"   -- amber (meteor targets)
 
 -- -- Ability IDs ------------------------------------------------------------
 local POWERFUL_SLAM    = 120542   -- combatRoute: ACTION_RESULT_BEGIN -> Block alert (player/nearby 7m)
@@ -54,11 +47,9 @@ local NEGATE_FIELD     = 121411   -- combatRoute: ACTION_RESULT_BEGIN -> Dodge a
 
 local CA = require("external-api.CombatAlerts")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes -----------------------------------------------------
-local COL_SLAM   = { -2, 0, false, { 1.0, 0.27, 0.0, 0.4 }, { 1.0, 0.27, 0.0, 0.8 } }
-local COL_STONE  = { -2, 0, false, { 0.7, 0.52, 0.0, 0.4 }, { 0.7, 0.52, 0.0, 0.8 } }
-local COL_THRASH = { -2, 0, false, { 0.9, 0.1,  0.1, 0.4 }, { 0.9, 0.1,  0.1, 0.8 } }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_SLAM_DUR      = 2000   -- PowerfulSlam / Stonefist: empirical
@@ -149,8 +140,8 @@ local function handleNextMeteor(self, context, alerts, result, abilityId,
         if IsUnitPlayer(unitTag) and unitTag and unitTag ~= "" then
             local name
             if AreUnitsEqual("player", unitTag)
-            then name = Fmt.c(COL_TARGET, "== YOU ==")
-            else name = Fmt.c(COL_TARGET, GetUnitDisplayName(unitTag) or unitName or "?")
+            then name = Fmt.c(Fmt.AMBER, "== YOU ==")
+            else name = Fmt.c(Fmt.AMBER, GetUnitDisplayName(unitTag) or unitName or "?")
             end
             self.meteorTargets[unitTag] = name
             self.meteorDisplayEnd_ms = GetGameTimeMilliseconds() + 4000
@@ -186,7 +177,7 @@ local function handlePowerfulSlam(self, context, alerts, abilityId,
     if show then
         alerts:showAction(Lang.t("ss_nahvii_block_slam"))
         local dur = CastDur.get(POWERFUL_SLAM, FALLBACK_SLAM_DUR)
-        local cid = CA.alertCast(abilityId, sourceUnitName, dur, COL_SLAM)
+        local cid = CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
         if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
     end
 end
@@ -197,7 +188,7 @@ local function handleStonefist(self, context, alerts, abilityId,
     if not (IsUnitPlayer(unitTag) and AreUnitsEqual("player", unitTag)) then return end
     alerts:showAction(Lang.t("ss_nahvii_block_stonefist"))
     local dur = CastDur.get(STONEFIST, FALLBACK_SLAM_DUR)
-    local cid = CA.alertCast(abilityId, sourceUnitName, dur, COL_STONE)
+    local cid = CA.melee(abilityId, sourceUnitName, dur, Colors.AMBER)
     if cid and sourceUnitId then self.alertList[sourceUnitId] = cid end
 end
 
@@ -214,10 +205,9 @@ end
 local function handleThrash(self, context, alerts, abilityId, ...)
     local dur = CastDur.get(THRASH, FALLBACK_THRASH_DUR)
     CA.castAlertsStop(self.thrashBarId)
-    self.thrashBarId = CA.castAlertsStart(
+    self.thrashBarId = CA.bar(
         abilityId, "Thrash",
-        dur, dur,
-        { 0.9, 0.1, 0.1, 0.5 },
+        dur, dur, Colors.RED, 0.5,
         { dur, "THRASH!", 0.9, 0.1, 0.1, 0.9, SOUNDS.NONE })
     if self.nextMeteorTime > 0 then
         self.nextMeteorTime = self.nextMeteorTime - 1.5
@@ -335,7 +325,7 @@ local function showNextMeteorLine(self, alerts, now)
     if self.nextMeteorTime > 0 then
         local T = self.nextMeteorTime - now
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_METEOR, Lang.t("ss_nahvii_next_meteor")), T)
+            alerts:setRow(1, Fmt.c(Fmt.RED, Lang.t("ss_nahvii_next_meteor")), T)
         else
             alerts:clearRow(1)   -- meteor has hit; CombatAlerts handles the alert bar
         end
@@ -351,14 +341,14 @@ local function showPortalInterruptLine(self, alerts, now)
     local pinsLeft   = self.pinsTime - now
 
     if interLeft > 0 then
-        alerts:setRow(2, Fmt.c(COL_PORTAL, Lang.t("ss_nahvii_interrupt_in")), interLeft)
+        alerts:setRow(2, Fmt.c(Fmt.AQUA, Lang.t("ss_nahvii_interrupt_in")), interLeft)
     elseif pinsLeft > 0 then
-        alerts:setRow(2, Fmt.c(COL_PORTAL, Lang.t("ss_nahvii_next_pins")),    pinsLeft)
+        alerts:setRow(2, Fmt.c(Fmt.AQUA, Lang.t("ss_nahvii_next_pins")),    pinsLeft)
     elseif portalLeft >= 11 then
         -- Enough time has passed that the group should already be inside.
         alerts:setRow(2, Fmt.c(Fmt.RED,    Lang.t("ss_nahvii_portal_urgent")), portalLeft)
     elseif portalLeft > 0 then
-        alerts:setRow(2, Fmt.c(COL_PORTAL, Lang.t("ss_nahvii_portal")),        portalLeft)
+        alerts:setRow(2, Fmt.c(Fmt.AQUA, Lang.t("ss_nahvii_portal")),        portalLeft)
     else
         alerts:clearRow(2)
     end
@@ -377,9 +367,9 @@ local function showMeteorOrStormLine(self, alerts, now, now_ms)
     else
         local storm = self.stormTime - now
         if storm >= 5.2 then
-            alerts:setRow(3, Fmt.c(COL_FIRE, Lang.t("ss_nahvii_fire_storm_begin")), storm - 5.2)
+            alerts:setRow(3, Fmt.c(Fmt.CRIMSON, Lang.t("ss_nahvii_fire_storm_begin")), storm - 5.2)
         elseif storm >= 0 then
-            alerts:setRow(3, Fmt.c(COL_FIRE, Lang.t("ss_nahvii_fire_storm_end")),   storm)
+            alerts:setRow(3, Fmt.c(Fmt.CRIMSON, Lang.t("ss_nahvii_fire_storm_end")),   storm)
         else
             alerts:clearRow(3)
         end
@@ -392,9 +382,9 @@ local function showLandingWipeLine(self, alerts, now, context)
     local wipeLeft = self.wipeTime    - now
 
     if landing > 0 then
-        alerts:setRow(4, Fmt.c(COL_LANDING, Lang.t("ss_landing")),          landing)
+        alerts:setRow(4, Fmt.c(Fmt.LANDING, Lang.t("ss_landing")),          landing)
     elseif wipeLeft > 0 then
-        alerts:setRow(4, Fmt.c(COL_WIPE,    Lang.t("ss_nahvii_portal_wipe")), wipeLeft)
+        alerts:setRow(4, Fmt.c(Fmt.VOID,    Lang.t("ss_nahvii_portal_wipe")), wipeLeft)
     elseif not self.inPortal then
         local hp = context.healthPercent
         if hp and hp > 39 then
@@ -404,7 +394,7 @@ local function showLandingWipeLine(self, alerts, now, context)
             elseif hp >= 40 then flyAt = 40
             end
             if flyAt and (hp - flyAt) <= 5 then
-                alerts:setRow(4, Fmt.c(COL_FLY_IN, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
+                alerts:setRow(4, Fmt.c(Fmt.FLYZONE, Lang.t("ss_can_fly_in") .. Fmt.pct(hp - flyAt, 1)), nil)
             else
                 alerts:clearRow(4)
             end

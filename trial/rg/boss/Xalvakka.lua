@@ -37,11 +37,6 @@ local RockgroveCommon = require("trial.rg.RockgroveCommon")
 local Lang = require("core.Lang")
 local Fmt  = require("core.Fmt")
 
-local COL_JUMP    = "ffaa40"   -- orange-gold (next jump)
-local COL_SOUL    = "ff6600"   -- orange (soul resonance)
-local COL_SHIELD  = "75E6DA"   -- teal (volatile shell shield)
-local COL_MANIFOLD = "AA44ff"  -- purple (manifold curse)
-local COL_RUN     = "ffdd00"   -- yellow (run-in HP threshold)
 
 local SHIELD_EVENT_KEY = ADDON_PREFIX .. "RG_XalvakkaShield"
 
@@ -56,8 +51,8 @@ local SOUL_RESONANCE  = 152993   -- effectRoute: EFFECT_RESULT_GAINED / FADED ->
 local UNSTABLE_CHARGE = 153164   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> green border (blob)
 local MANIFOLD_DEBUFF = 157290   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> purple border + tracker
 
-local SCATHING_IDS = { [149180]=true, [153448]=true, [153450]=true }
-local DEADSTAR_IDS = { [149386]=true, [149075]=true }
+-- 149180/153448/153450 (SCATHING_IDS) -- reference: scathing strike detection set (unrouted)
+-- 149386/149075 (DEADSTAR_IDS)        -- reference: dead star detection set (unrouted)
 
 -- Soul resonance display window after GAINED (seconds); approximate; verify in-game.
 local SOUL_WINDOW = 9
@@ -71,9 +66,9 @@ local RUN2_BOT = 40
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes -----------------------------------------------------
-local COL_SCATHING = { -2, 0, false, { 0.9, 0.2, 0.9, 0.4 }, { 0.9, 0.2, 0.9, 0.8 } }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_SCATHING_DUR = 1500   -- ScathingEvisceration: empirical
@@ -197,7 +192,7 @@ local function handleScathing(self, context, alerts, abilityId,
                                sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_SCATHING_DUR)
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_SCATHING)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.MAGENTA)
 end
 
 -- Deadstar add explosion (2 IDs, shared handler).
@@ -255,7 +250,7 @@ local function handleManifoldDebuff(self, context, alerts, changeType, abilityId
         if AreUnitsEqual("player", unitTag) then
             self.selfManifold = true
             CA.border(true, 20000, "purple")
-            CA.alert(nil, Fmt.c(COL_MANIFOLD, "Manifold Curse") .. " on YOU  -  spread!",
+            CA.alert(nil, Fmt.c(Fmt.ARCANE, "Manifold Curse") .. " on YOU  -  spread!",
                 0xAA44FFD9, SOUNDS.DUEL_START, 5000)
             PlaySound(SOUNDS.DUEL_START)
         elseif IsUnitPlayer(unitTag) then
@@ -285,9 +280,9 @@ local function showJumpLine(self, alerts, now, isHM)
     if isHM and self.nextJump > 0 and self.numJumps < 4 then
         local T = self.nextJump - now
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_JUMP, Lang.t("rg_xalvakka_next_jump")), T)
+            alerts:setRow(1, Fmt.c(Fmt.AMBER, Lang.t("rg_xalvakka_next_jump")), T)
         else
-            alerts:setRow(1, Fmt.c(COL_JUMP, Lang.t("rg_xalvakka_next_jump")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
+            alerts:setRow(1, Fmt.c(Fmt.AMBER, Lang.t("rg_xalvakka_next_jump")) .. " " .. Fmt.c(Fmt.RED, "INC"), nil)
         end
     else
         alerts:clearRow(1)
@@ -299,7 +294,7 @@ local function showSoulLine(self, alerts, now)
     if self.soulStart > 0 then
         local T = SOUL_WINDOW - (now - self.soulStart)
         if T > 0 then
-            alerts:setRow(2, Fmt.c(COL_SOUL, Lang.t("rg_xalvakka_soul_res")), T)
+            alerts:setRow(2, Fmt.c(Fmt.ORANGE, Lang.t("rg_xalvakka_soul_res")), T)
         else
             self.soulStart = 0
             alerts:clearRow(2)
@@ -315,10 +310,10 @@ local function showManifoldLine(self, alerts)
     if hasManifold then
         local parts = {}
         if self.selfManifold then
-            parts[#parts + 1] = Fmt.c(COL_MANIFOLD, "YOU")
+            parts[#parts + 1] = Fmt.c(Fmt.ARCANE, "YOU")
         end
         for _, name in pairs(self.manifoldOthers) do
-            parts[#parts + 1] = Fmt.c(COL_MANIFOLD, name)
+            parts[#parts + 1] = Fmt.c(Fmt.ARCANE, name)
         end
         alerts:setRow(3, Lang.t("rg_xalvakka_manifold") .. table.concat(parts, ", "), nil)
     elseif self.shellShield > 0 then
@@ -333,9 +328,9 @@ end
 local function showRunLine(self, alerts, context)
     local hp = context.healthPercent
     if hp and hp > RUN1_BOT and hp <= RUN1_TOP then
-        alerts:setRow(4, Fmt.c(COL_RUN, Lang.t("rg_xalvakka_run_in") .. Fmt.pct(hp - RUN1_BOT, 1)), nil)
+        alerts:setRow(4, Fmt.c(Fmt.YELLOW, Lang.t("rg_xalvakka_run_in") .. Fmt.pct(hp - RUN1_BOT, 1)), nil)
     elseif hp and hp > RUN2_BOT and hp <= RUN2_TOP then
-        alerts:setRow(4, Fmt.c(COL_RUN, Lang.t("rg_xalvakka_run_in") .. Fmt.pct(hp - RUN2_BOT, 1)), nil)
+        alerts:setRow(4, Fmt.c(Fmt.YELLOW, Lang.t("rg_xalvakka_run_in") .. Fmt.pct(hp - RUN2_BOT, 1)), nil)
     elseif self.onBlob then
         alerts:setRow(4, Fmt.c(Fmt.GREEN, Lang.t("rg_xalvakka_on_blob")), nil)
     else

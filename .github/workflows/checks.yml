@@ -15,6 +15,7 @@ name: checks
 #   luajit test/checks/filters.lua
 #   luajit test/checks/settings-usage.lua
 #   luajit test/checks/state-reset.lua
+#   luajit test/run_log.lua <fixture>  (one per trial in test/fixtures/)
 #
 # ESO runs a Lua 5.1 dialect; LuaJIT is source-compatible and is what the
 # offline test harness already targets.
@@ -128,15 +129,29 @@ jobs:
         if: ${{ !cancelled() }}
         run: luajit test/checks/state-reset.lua
 
-      # ADVISORY, not blocking. luacheck covers the one class the bespoke
-      # checks do not - unused locals, shadowed names, unreachable code - but
-      # its baseline on this tree has never been seen, so it reports without
-      # failing the run. Read the output, fix or ignore what it finds, then
-      # delete `continue-on-error` to make it a gate.
-      # Scope and rationale for the rule selection are in .luacheckrc.
-      - name: Luacheck (advisory)
+      # Smoke-test every committed fixture: replay it through the live boss
+      # modules under the offline harness stubs and assert zero handler errors.
+      # Fixtures in test/fixtures/ are minimal synthetic encounter logs — one
+      # per trial — containing the trial zone change, boss activations (where
+      # unit names are known), and a representative sample of ability events.
+      # Fixtures with only a zone change exercise the trial Factory and harness
+      # loading without boss activation; boss-level fixtures also emit a per-
+      # ability coverage summary (SEEN / NEVER SEEN per combatRoutes entry).
+      - name: Replay logs
         if: ${{ !cancelled() }}
-        continue-on-error: true
+        run: |
+          rc=0
+          for f in test/fixtures/*.log; do
+            echo "--- $f ---"
+            luajit test/run_log.lua "$f" || rc=1
+          done
+          exit $rc
+
+      # Blocking gate. luacheck covers the one class the bespoke checks do not
+      # — unused locals, shadowed names, unreachable code.
+      # Scope and rationale for the rule selection are in .luacheckrc.
+      - name: Luacheck
+        if: ${{ !cancelled() }}
         run: |
           sudo apt-get install -y --no-install-recommends lua-check
-          luacheck . --codes --ranges || true
+          luacheck . --codes --ranges

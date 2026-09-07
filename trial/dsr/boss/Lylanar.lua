@@ -46,8 +46,6 @@ local DebuffTracker    = require("lib.DebuffTracker")
 local Lang             = require("core.Lang")
 local Fmt              = require("core.Fmt")
 
-local COL_FIRE = "FF5733"   -- fire orange (Lylanar / fire side)
-local COL_ICE  = "99CCff"   -- ice blue (Turlassil / ice side)
 
 -- -- Ability IDs  -  Fire (Lylanar) -------------------------------------------
 local CINDER_SURGE         = 166693   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> interrupt ice dome
@@ -63,7 +61,7 @@ local INCENDIARY_AXE       = 168817   -- combatRoute: ACTION_RESULT_BEGIN -> HM 
 local LYLANAR_MULTILOC     = 166909   -- effectRoute: EFFECT_RESULT_GAINED -> Lylanar teleport alert
 local DESTRUCTIVE_EMBER    = 166210   -- effectRoute: EFFECT_RESULT_GAINED / UPDATED / FADED -> fire bubble stacks
 local SUMMON_FLAME_HOUND   = 169317   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> flameHounds counter
-local PRE_FIREBRAND        = 166355   -- cast before brand placement
+-- 166355 (PRE_FIREBRAND)  -- reference: cast before brand placement; potential early alert
 
 -- -- Ability IDs  -  Ice (Turlassil) -----------------------------------------
 local NUMBING_SHARDS       = 166735   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> interrupt fire dome
@@ -79,7 +77,7 @@ local CALAMITOUS_SWORD     = 168912   -- combatRoute: ACTION_RESULT_BEGIN -> HM 
 local TURLASSIL_MULTILOC   = 166745   -- effectRoute: EFFECT_RESULT_GAINED -> Turlassil teleport alert
 local PIERCING_HAILSTONE   = 166192   -- effectRoute: EFFECT_RESULT_GAINED / UPDATED / FADED -> ice bubble stacks
 local SUMMON_FROST_HOUND   = 169313   -- effectRoute: EFFECT_RESULT_GAINED / FADED -> frostHounds counter
-local PRE_FROSTBRAND       = 166364   -- cast before brand placement
+-- 166364 (PRE_FROSTBRAND) -- reference: cast before brand placement; potential early alert
 
 -- -- Ability IDs  -  Shared --------------------------------------------------
 local HINDERED             = 165972   -- effectRoute: EFFECT_RESULT_GAINED + player -> AlertBorder 12s
@@ -95,10 +93,9 @@ local BUBBLE_CD_HM   = 20    -- s: bubble drop cooldown (HM)
 local CA = require("external-api.CombatAlerts")
 local BossBase = require("lib.BossBase")
 local CastDur = require("lib.CastDur")
+local Colors = require("core.Colors")
 
 -- -- CA colour palettes ----------------------------------------------------
-local COL_FIRE_HEAVY = { -2, 0, false, { 1.0, 0.35, 0.1, 0.4 }, { 1.0, 0.35, 0.1, 0.8 } }
-local COL_ICE_HEAVY  = { -2, 0, false, { 0.3, 0.75, 1.0, 0.4 }, { 0.3, 0.75, 1.0, 0.8 } }
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
 local FALLBACK_HEAVY_DUR = 1500   -- BroilingHew / TorridCleave / StingingShear / BriskRip: empirical
@@ -199,7 +196,7 @@ local function handleBroilingHew(self, context, alerts, abilityId,
                                   sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_HEAVY_DUR)
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_FIRE_HEAVY)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
 end
 
 local function handleTorridCleave(self, context, alerts, abilityId,
@@ -208,16 +205,16 @@ local function handleTorridCleave(self, context, alerts, abilityId,
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_HEAVY_DUR)
     alerts:showAction(Lang.t("dsr_lylanar_dodge_cleave"))
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_FIRE_HEAVY)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.FIRE)
 end
 
 local function handleScaldingSwell(self, context, alerts, abilityId, ...)
-    CA.alert(nil, Fmt.c(COL_FIRE, "Fire wave") .. "  -  move!", 0xFF5733D9,
+    CA.alert(nil, Fmt.c(Fmt.FIRE, "Fire wave") .. "  -  move!", 0xFF5733D9,
         SOUNDS.CHAMPION_POINTS_COMMITTED, 5500)
 end
 
 local function handleCharredConstriction(self, context, alerts, abilityId, ...)
-    CA.alert(nil, Fmt.c(COL_FIRE, "Fire jump!") .. " (spike  -  block)", 0xFF5733D9,
+    CA.alert(nil, Fmt.c(Fmt.FIRE, "Fire jump!") .. " (spike  -  block)", 0xFF5733D9,
         SOUNDS.CHAMPION_POINTS_COMMITTED, 2500)
 end
 
@@ -236,7 +233,7 @@ local function handleStingingShear(self, context, alerts, abilityId,
                                     sourceUnitName, unitName)
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_HEAVY_DUR)
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_ICE_HEAVY)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.FROST)
 end
 
 local function handleBriskRip(self, context, alerts, abilityId,
@@ -245,16 +242,16 @@ local function handleBriskRip(self, context, alerts, abilityId,
     if not IsUnitPlayer(unitTag) then return end
     local dur = CastDur.get(abilityId, FALLBACK_HEAVY_DUR)
     alerts:showAction(Lang.t("dsr_lylanar_dodge_cleave"))
-    CA.alertCast(abilityId, sourceUnitName, dur, COL_ICE_HEAVY)
+    CA.melee(abilityId, sourceUnitName, dur, Colors.FROST)
 end
 
 local function handleBitingBillow(self, context, alerts, abilityId, ...)
-    CA.alert(nil, Fmt.c(COL_ICE, "Ice wave") .. "  -  move!", 0x99CCffD9,
+    CA.alert(nil, Fmt.c(Fmt.FROST, "Ice wave") .. "  -  move!", 0x99CCffD9,
         SOUNDS.CHAMPION_POINTS_COMMITTED, 5500)
 end
 
 local function handleFrigidarium(self, context, alerts, abilityId, ...)
-    CA.alert(nil, Fmt.c(COL_ICE, "Ice jump!") .. " (spike  -  block)", 0x99CCffD9,
+    CA.alert(nil, Fmt.c(Fmt.FROST, "Ice jump!") .. " (spike  -  block)", 0x99CCffD9,
         SOUNDS.CHAMPION_POINTS_COMMITTED, 2500)
 end
 
@@ -293,7 +290,7 @@ local function handleCinderSurge(self, context, alerts, changeType, abilityId,
         self.cinderSurgeActive = true
         self:after(500, function()
             if self.cinderSurgeActive then
-                CA.alert(nil, Fmt.c(COL_FIRE, "INTERRUPT!") .. " (Ice Dome)",
+                CA.alert(nil, Fmt.c(Fmt.FIRE, "INTERRUPT!") .. " (Ice Dome)",
                     0xFF2020D9, SOUNDS.DUEL_START, 15000)
                 PlaySound(SOUNDS.DUEL_START)
             end
@@ -310,7 +307,7 @@ local function handleNumbingShards(self, context, alerts, changeType, abilityId,
         self.numbingShardsActive = true
         self:after(500, function()
             if self.numbingShardsActive then
-                CA.alert(nil, Fmt.c(COL_ICE, "INTERRUPT!") .. " (Fire Dome)",
+                CA.alert(nil, Fmt.c(Fmt.FROST, "INTERRUPT!") .. " (Fire Dome)",
                     0x2020FFD9, SOUNDS.DUEL_START, 15000)
                 PlaySound(SOUNDS.DUEL_START)
             end
@@ -440,14 +437,14 @@ end
 
 local function handleLylanarMultiloc(self, context, alerts, changeType, abilityId, ...)
     if changeType == EFFECT_RESULT_GAINED then
-        CA.alert(nil, Fmt.c(COL_FIRE, "Lylanar teleports") .. "  -  reposition!",
+        CA.alert(nil, Fmt.c(Fmt.FIRE, "Lylanar teleports") .. "  -  reposition!",
             0xFF5733D9, SOUNDS.CHAMPION_POINTS_COMMITTED, 4000)
     end
 end
 
 local function handleTurlassilMultiloc(self, context, alerts, changeType, abilityId, ...)
     if changeType == EFFECT_RESULT_GAINED then
-        CA.alert(nil, Fmt.c(COL_ICE, "Turlassil teleports") .. "  -  reposition!",
+        CA.alert(nil, Fmt.c(Fmt.FROST, "Turlassil teleports") .. "  -  reposition!",
             0x99CCffD9, SOUNDS.CHAMPION_POINTS_COMMITTED, 4000)
     end
 end
@@ -508,10 +505,10 @@ local function showFireBubbleLine(self, alerts, now, isHM)
         local suffix = stks ~= 1 and Lang.t("dsr_lylanar_ember_suffix_p", stks)
                                    or  Lang.t("dsr_lylanar_ember_suffix",   stks)
         if T > 0 then
-            alerts:setRow(1, Fmt.c(COL_FIRE, "\xf0\x9f\x94\xa5 " .. name) .. suffix, T)
+            alerts:setRow(1, Fmt.c(Fmt.FIRE, "\xf0\x9f\x94\xa5 " .. name) .. suffix, T)
         else
             alerts:setRow(1,
-                Fmt.c(COL_FIRE, "\xf0\x9f\x94\xa5 " .. name) .. suffix
+                Fmt.c(Fmt.FIRE, "\xf0\x9f\x94\xa5 " .. name) .. suffix
                 .. " " .. Fmt.c(Fmt.RED, Lang.t("dsr_lylanar_drop")), nil)
         end
     else
@@ -529,10 +526,10 @@ local function showIceBubbleLine(self, alerts, now, isHM)
         local suffix = stks ~= 1 and Lang.t("dsr_lylanar_ember_suffix_p", stks)
                                    or  Lang.t("dsr_lylanar_ember_suffix",   stks)
         if T > 0 then
-            alerts:setRow(2, Fmt.c(COL_ICE, "\xe2\x9d\x84 " .. name) .. suffix, T)
+            alerts:setRow(2, Fmt.c(Fmt.FROST, "\xe2\x9d\x84 " .. name) .. suffix, T)
         else
             alerts:setRow(2,
-                Fmt.c(COL_ICE, "\xe2\x9d\x84 " .. name) .. suffix
+                Fmt.c(Fmt.FROST, "\xe2\x9d\x84 " .. name) .. suffix
                 .. " " .. Fmt.c(Fmt.RED, Lang.t("dsr_lylanar_drop")), nil)
         end
     else
@@ -545,9 +542,9 @@ local function showFragilityLine(self, alerts)
     local fireT = self.fireFragility:remaining()
     local iceT  = self.iceFragility:remaining()
     if fireT > 0 then
-        alerts:setRow(3, Fmt.c(COL_FIRE, Lang.t("dsr_lylanar_fire_fragility")), fireT)
+        alerts:setRow(3, Fmt.c(Fmt.FIRE, Lang.t("dsr_lylanar_fire_fragility")), fireT)
     elseif iceT > 0 then
-        alerts:setRow(3, Fmt.c(COL_ICE, Lang.t("dsr_lylanar_ice_fragility")), iceT)
+        alerts:setRow(3, Fmt.c(Fmt.FROST, Lang.t("dsr_lylanar_ice_fragility")), iceT)
     else
         alerts:clearRow(3)
     end
@@ -560,33 +557,33 @@ local function showSpikeLine(self, alerts, now, isHM)
     local iceSpikeT  = (self.lastGlacialSpike > 0) and (SPIKE_DUR - (now - self.lastGlacialSpike)) or -1
 
     if fireSpikeT > 0 then
-        alerts:setRow(4, Fmt.c(COL_FIRE, Lang.t("dsr_lylanar_need_fire_dome")), fireSpikeT)
+        alerts:setRow(4, Fmt.c(Fmt.FIRE, Lang.t("dsr_lylanar_need_fire_dome")), fireSpikeT)
     elseif iceSpikeT > 0 then
-        alerts:setRow(4, Fmt.c(COL_ICE, Lang.t("dsr_lylanar_need_ice_dome")), iceSpikeT)
+        alerts:setRow(4, Fmt.c(Fmt.FROST, Lang.t("dsr_lylanar_need_ice_dome")), iceSpikeT)
     elseif isHM and self.lastIncendiaryAxe > 0 then
         local T = WEAPON_CD - (now - self.lastIncendiaryAxe)
         -- Sword info (secondary timer) appended to name column if active.
         local swordPart = ""
         if self.lastCalamitousSword > 0 then
-            swordPart = Fmt.c(COL_ICE, Lang.t("dsr_lylanar_sword")
+            swordPart = Fmt.c(Fmt.FROST, Lang.t("dsr_lylanar_sword")
                 .. Fmt.timer(math.max(0, WEAPON_CD - (now - self.lastCalamitousSword))))
         end
         if T > 0 then
-            alerts:setRow(4, Fmt.c(COL_FIRE, Lang.t("dsr_lylanar_axe")) .. swordPart, T)
+            alerts:setRow(4, Fmt.c(Fmt.FIRE, Lang.t("dsr_lylanar_axe")) .. swordPart, T)
         else
             alerts:setRow(4,
-                Fmt.c(COL_FIRE, Lang.t("dsr_lylanar_axe")) .. " " .. Fmt.c(Fmt.RED, "INC") .. swordPart, nil)
+                Fmt.c(Fmt.FIRE, Lang.t("dsr_lylanar_axe")) .. " " .. Fmt.c(Fmt.RED, "INC") .. swordPart, nil)
         end
     else
         local fireImminT = self.fireImminent:remaining()
         local iceImminT  = self.iceImminent:remaining()
         if fireImminT > 0 then
             alerts:setRow(4,
-                Fmt.c(COL_FIRE, Lang.t("dsr_lylanar_imm_blister")
+                Fmt.c(Fmt.FIRE, Lang.t("dsr_lylanar_imm_blister")
                     .. " (" .. (self.fireImminent:playerName() or "?") .. ")"), fireImminT)
         elseif iceImminT > 0 then
             alerts:setRow(4,
-                Fmt.c(COL_ICE, Lang.t("dsr_lylanar_imm_chill")
+                Fmt.c(Fmt.FROST, Lang.t("dsr_lylanar_imm_chill")
                     .. " (" .. (self.iceImminent:playerName() or "?") .. ")"), iceImminT)
         else
             alerts:clearRow(4)

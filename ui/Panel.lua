@@ -18,7 +18,6 @@
 ---   setRow(n, name, eta) – tracker row n: label + seconds remaining (nil = static)
 ---   clearRow(n)          – blank tracker row n
 ---   clear()              – clear both panels and deactivate
----   info(n, text)        – backward-compat shim → setRow(n, text, nil)
 ---
 --- Design rules:
 ---   - Controls are built ONCE on first enable, never per event.
@@ -363,12 +362,6 @@ Panel.alerts = {
     -- clearRow(n)  –  blank out tracker row n.
     clearRow = function(n)
         setRowInternal(n, "", nil)
-    end,
-
-    -- info(n, text)  –  backward-compat shim for non-migrated bosses.
-    -- Writes the full formatted string to the name column; ETA column is blank.
-    info = function(n, text)
-        setRowInternal(n, text or "", nil)
     end,
 
     -- clear()  –  clear both panels and deactivate.

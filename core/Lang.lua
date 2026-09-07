@@ -8,7 +8,7 @@
 ---   -- static string:
 ---   alerts:showAction(Lang.t("ss_block_jump"))
 ---   -- format string:
----   alerts:showInfo(1, Lang.t("ss_yolna_next_flare", T))
+---   alerts:setRow(1, Lang.t("ss_yolna_next_flare"), T)
 ---
 --- Adding a new locale:
 ---   1. Create lang/<code>.lua in the same style as lang/en.lua.
