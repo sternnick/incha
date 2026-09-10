@@ -21,8 +21,11 @@ tried in order:
 2. **Unit name** — `Boss.name` / `Boss.nameAliases` compared against `GetUnitName`.
 
 Only the three KA bosses declare an AABB. The other 22 rely entirely on name matching, which
-currently reads the translation table and therefore fails on a non-English client — see A8 and
-#134. Capturing the missing bounds is #123.
+compares plain English literals against `GetUnitName` (`core/BossRegistry.lua` normalises both
+sides with `zo_strformat("<<1>>")` to strip gender/article markup) — so it still fails on a
+non-English client, exactly as before #173 resolved the translation-table coupling (#134). The
+detection fields no longer read `lang/`, but the locale failure mode is unchanged; capturing the
+missing bounds is #123.
 
 To capture one, stand at each corner of the arena:
 
