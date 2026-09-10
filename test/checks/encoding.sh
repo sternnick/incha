@@ -20,7 +20,7 @@ findings=0
 count=0
 
 for f in $(find . \( -name '*.lua' -o -name '*.txt' -o -name '*.md' -o -name '*.sh' \) \
-             -not -path './.git/*' -not -path './.claude/*' | sort); do
+             -not -path './.git/*' -not -path './.claude/*' -not -path './.review/*' | sort); do
     count=$((count + 1))
 
     if head -c 3 "$f" | od -An -tx1 | grep -q 'ef bb bf'; then

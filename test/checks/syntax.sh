@@ -16,7 +16,7 @@ set -u
 findings=0
 count=0
 
-for f in $(find . -name '*.lua' -not -path './.git/*' -not -path './.claude/*' | sort); do
+for f in $(find . -name '*.lua' -not -path './.git/*' -not -path './.claude/*' -not -path './.review/*' | sort); do
     count=$((count + 1))
     if ! out=$(luajit -bl "$f" 2>&1 >/dev/null); then
         echo "SYNTAX  $f"

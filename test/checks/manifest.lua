@@ -64,7 +64,7 @@ end
 -- -- Every source file must be listed (.lua and .xml) ----------------------
 local p = io.popen('find . \\( -name "*.lua" -o -name "*.xml" \\) '
     .. '-not -path "./.git/*" '
-    .. '-not -path "./.claude/*" -not -path "./test/*" 2>/dev/null')
+    .. '-not -path "./.claude/*" -not -path "./.review/*" -not -path "./test/*" 2>/dev/null')
 local onDisk = {}
 for line in p:lines() do
     local rel = line:gsub("%s+$", ""):gsub("^%./", ""):gsub("\\", "/")
