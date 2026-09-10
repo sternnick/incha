@@ -32,6 +32,7 @@ package.path = ADDON_ROOT .. "?.lua;"
 local EsoApi     = require("harness.eso_api")
 local UnitTracker = require("harness.unit_tracker")
 local LogReader  = require("harness.log_reader")
+local Coverage   = require("harness.coverage")
 
 -- Pre-load the English string table so core.Lang resolves boss .name fields
 -- (e.g. Lokke.name = Lang.t("boss_lokkestiiz") → "Lokkestiiz").
@@ -95,15 +96,30 @@ local function makeAlertHandlers()
 end
 
 -- -- Helper: inject an active boss directly (bypass ESO event discovery) ---
-local function injectBoss(trial, bossClass)
-    if trial.activeBoss and trial.activeBoss.onLeave then
-        pcall(trial.activeBoss.onLeave, trial.activeBoss, trial.context)
+local function injectBoss(trial, bossClass, logName)
+    -- Everything reads the active boss through Trial:getActiveBoss(), which
+    -- since a519e34 returns trial.activeBosses[1].  The harness must inject
+    -- into that same field: setting a private trial.activeBoss instead made
+    -- every dispatch see a nil boss and silently no-op (0 alerts, 0 errors).
+    local outgoing = trial:getActiveBoss()
+    if outgoing and outgoing.onLeave then
+        pcall(outgoing.onLeave, outgoing, trial.context)
     end
 
+    -- Route coverage watches the CLASS (instances see the wrapped tables via
+    -- the metatable), and marks which boss's window the counters belong to.
+    Coverage.instrument(bossClass)
+    Coverage.setActive(bossClass.key, logName)
+
     local instance = bossClass.new()
-    trial.activeBoss = instance
+    trial.activeBosses = { instance }
     trial.context:setBoss(instance)
     trial.context.inCombat = false
+
+    -- Same wiring order as Trial:onBossesChanged (instance -> setBoss ->
+    -- pipeline registration -> onEnter -> bridge), so the harness drives the
+    -- shipping lifecycle rather than a near-copy of it.
+    pcall(trial.pipeline.setActiveBoss, trial.pipeline, instance)
 
     if instance.onEnter then
         pcall(instance.onEnter, instance, trial.context, trial.alerts)
@@ -112,12 +128,21 @@ local function injectBoss(trial, bossClass)
 end
 
 local function clearBoss(trial)
-    if trial.activeBoss and trial.activeBoss.onLeave then
-        pcall(trial.activeBoss.onLeave, trial.activeBoss, trial.context)
+    local boss = trial:getActiveBoss()
+    if boss then
+        if boss.onLeave then
+            pcall(boss.onLeave, boss, trial.context)
+        end
+        if boss.cancelPending then
+            boss:cancelPending()
+        end
     end
-    trial.activeBoss = nil
+    trial.activeBosses = {}
     trial.context:setBoss(nil)
+    pcall(trial.pipeline.setActiveBoss, trial.pipeline, nil)
     trial.bridge.onBossExit()
+    -- Coverage stops attributing events until the next boss activates.
+    Coverage.setActive(nil)
 end
 
 -- -- Build a trial instance with test handlers -----------------------------
@@ -178,6 +203,12 @@ local function replayTrial(cfg, entries, tracker)
     local bossOrder = {}
     local activeClass = nil   -- currently active boss CLASS (not instance)
 
+    -- Coverage bookkeeping: which bosses ever activated (their routes are the
+    -- only ones attributable to a log window) and the union of ids their
+    -- shipping routing tables declare, read off the classes at activation.
+    local activatedKeys  = {}
+    local expectedByBoss = {}
+
     -- Wire ESO stubs
     EsoApi.setZoneId(cfg.zoneId)
     EsoApi.setTracker(tracker)
@@ -205,7 +236,7 @@ local function replayTrial(cfg, entries, tracker)
             EsoApi.setZoneId(e.zoneId)
             if e.zoneId ~= cfg.zoneId then
                 -- Leaving the trial zone: clear boss state and the unit table.
-                if trial.activeBoss then
+                if trial:getActiveBoss() then
                     clearBoss(trial)
                 end
                 tracker:clear()
@@ -230,7 +261,9 @@ local function replayTrial(cfg, entries, tracker)
                 -- Boss units not in this trial's registry are skipped silently
                 -- (Sea Adder, companion mobs, etc. are boss-flagged adds).
                 if bossClass then
-                    injectBoss(trial, bossClass)
+                    activatedKeys[bossClass.key] = true
+                    expectedByBoss[bossClass.key] = Coverage.expectedFor(bossClass)
+                    injectBoss(trial, bossClass, e.name)
                     activeClass = bossClass
                     if not bossSeen[bossClass] then
                         bossSeen[bossClass] = { combat = {}, effect = {} }
@@ -244,10 +277,10 @@ local function replayTrial(cfg, entries, tracker)
 
         elseif et == "UNIT_REMOVED" and e.unitId then
             local info = tracker:getById(e.unitId)
-            if info and info.isBoss and trial.activeBoss then
+            local active = trial:getActiveBoss()
+            if info and info.isBoss and active then
                 -- If the removed unit is the currently active boss, clear it.
-                local activeKey = trial.activeBoss and
-                    (getmetatable(trial.activeBoss) or trial.activeBoss).key
+                local activeKey = active.key
                 local removedClass = trial.registry:getByKey(
                     info.isBoss and (hints[info.name] or ""))
                 if removedClass and removedClass.key == activeKey then
@@ -259,8 +292,14 @@ local function replayTrial(cfg, entries, tracker)
             tracker:removeUnit(e.unitId)
 
         -- -- Combat events -----------------------------------------------
-        elseif et == "COMBAT_EVENT" and trial.activeBoss then
+        elseif et == "COMBAT_EVENT" and trial:getActiveBoss() then
             if e.abilityId then
+                -- Coverage: what the log contained while a boss was active,
+                -- counted before dispatch so a handler error still counts
+                -- the event as seen (the counter wrapper records only
+                -- dispatched calls).
+                Coverage.onCombatSeen(e.abilityId)
+
                 -- Update source unit health in tracker (for GetUnitPower stubs).
                 if e.sourceUnitId and e.srcHealthMax > 0 then
                     tracker:updateHealth(e.sourceUnitId, e.srcHealthCur, e.srcHealthMax)
@@ -296,8 +335,10 @@ local function replayTrial(cfg, entries, tracker)
             end
 
         -- -- Effect events ------------------------------------------------
-        elseif et == "EFFECT_CHANGED" and trial.activeBoss then
+        elseif et == "EFFECT_CHANGED" and trial:getActiveBoss() then
             if e.abilityId and e.changeType ~= 0 then
+                Coverage.onEffectSeen(e.abilityId)
+
                 local unitTag  = tracker:tagById(e.unitId)
                 local unitName = tracker:nameById(e.unitId)
 
@@ -328,16 +369,28 @@ local function replayTrial(cfg, entries, tracker)
     -- Cleanup
     trial.pipeline:disable()
 
-    -- -- Per-ability coverage report -----------------------------------------
+    -- -- Route coverage (logged vs dispatched) -------------------------------
+    -- The dispatch-side report: every id the shipping routing tables declare,
+    -- with how many times the log CONTAINED it and how many times the real
+    -- dispatcher actually called a handler for it.  Three verdicts: exercised
+    -- / LOGGED, NEVER DISPATCHED / NEVER LOGGED.
+    Coverage.print(expectedByBoss)
+    local neverActivated = Coverage.missingActivation(activatedKeys, trial.registry.bosses)
+    if #neverActivated > 0 then
+        print("  bosses never activated (their routes are NOT counted): "
+            .. table.concat(neverActivated, ", "))
+    end
+    stats.coverage = Coverage.totals()
+
+    -- -- Per-ability presence (event-stream view) ----------------------------
     -- For each boss that appeared, compare every combatRoutes / effectRoutes
     -- entry against the ability IDs that actually fired during that boss's
-    -- tenure.  NEVER SEEN entries are the candidates for the F2 / F4 mechanic
-    -- gaps review (abilities declared but never wired to a real event in the
-    -- log).  A NEVER SEEN result is not necessarily a bug in the boss code:
-    -- it may just mean the fixture log does not contain that mechanic.
+    -- tenure.  Complements the report above: a tick here means the event
+    -- reached the harness, and says nothing about whether the dispatcher ran
+    -- a handler for it - see the LOGGED/DISPATCHED block for that.
     local neverSeen = 0
     if #bossOrder > 0 then
-        print("\n-- Per-ability coverage -------------------------------------")
+        print("\n-- Event-stream presence (reached the harness) --------------")
         for _, bossClass in ipairs(bossOrder) do
             local seen = bossSeen[bossClass]
             local key  = bossClass.key or "?"
@@ -468,9 +521,13 @@ local function main(args)
         .. "  Bosses activated                : %d\n"
         .. "  Alerts fired                    : %d\n"
         .. "  Handler errors                  : %d\n"
-        .. "  Route entries never seen        : %d\n",
+        .. "  Route entries never seen        : %d\n"
+        .. "  Routes never logged             : %d\n"
+        .. "  Routes LOGGED, NEVER DISPATCHED : %d\n",
         stats.combat, stats.effect, stats.bosses, stats.alerts, stats.errors,
-        stats.neverSeen or 0))
+        stats.neverSeen or 0,
+        (stats.coverage and stats.coverage.neverLogged) or 0,
+        (stats.coverage and stats.coverage.loggedNeverDispatched) or 0))
 
     os.exit(stats.errors > 0 and 1 or 0)
 end

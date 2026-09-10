@@ -196,7 +196,15 @@ than solving it.
 genuinely shared abilities already belong in the trial's `*Common.lua`. Dispatch fan-out is therefore
 not needed until an encounter proves otherwise.
 
+**Follow-up found during implementation (2026-09-09):** the rename left the offline replay harness
+injecting `trial.activeBoss`, which nothing reads any more. `getActiveBoss()` returned nil through the
+whole fixture replay — zero alerts, zero handler errors, exit 0. CI stayed green on a run where no
+boss ever received an event: the exact silent-dispatch failure class §9.1 exists to catch. Fixed in
+the same change that added dispatch counting (`test/harness/coverage.lua`); the coverage report is
+what turned the hole from invisible to two lines of output.
+
 ---
+
 
 ## A10 · Static checks are domain-specific, and a check that cannot fail is not a gate
 
