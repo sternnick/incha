@@ -17,6 +17,11 @@ test/live-data/
 
 # Local review reports — kept out of the repo to avoid accidental commits
 reviews/
+# why: the weekly-review job writes .review/ and DAILY_REPORT.md into the
+# working tree at every run; they showed as '??' at 1efc63e and one noisy
+# report away from a `git add .`, so ignore them like reviews/.
+.review/
+DAILY_REPORT.md
 .plan/
 C:*
 C*
