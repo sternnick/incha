@@ -81,6 +81,11 @@ function Yandir:onWipe(context, alerts)
     self.bGRYPHON_SKIP_FAILHP = 0
     self.poisonTotemId        = -1
     self.BTotemCall           = false
+    -- why: wipe reuses this boss instance (docs/decisions/architecture.md A3),
+    -- so an armed countdown keeps its deadline and renders during the run-back.
+    -- onCombatState re-arms both timers, but only after the next pull starts.
+    self.totemTimer:clear()
+    self.gryphonTimer:clear()
 end
 
 -- -- Combat state (fight start / wipe) -------------------------------------

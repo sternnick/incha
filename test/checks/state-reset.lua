@@ -38,22 +38,8 @@ local MANIFEST = "incha.txt"
 -- *BarId entries are CA cast-bar handles.
 local GRANDFATHERED = {
     ["trial/ka/boss/Falgravn.lua"] = {
-        instabilityTimer = "countdown survives the wipe; its zo_callLater IS cancelled",
-        bloodBallTimer   = "countdown survives the wipe",
-        openGatesTimer   = "countdown survives the wipe",
-        torturerTimer    = "countdown survives the wipe",
         showPercentUI    = "re-derived from Settings every onUpdate",
         bHM              = "re-derived from the difficulty the context resolves",
-    },
-    ["trial/ka/boss/Vrol.lua"] = {
-        portalTimer  = "re-armed in onCombatState, so the exposure is the idle gap",
-        conduitTimer = "re-armed in onCombatState",
-        fogTimer     = "re-armed in onCombatState",
-    },
-    ["trial/ka/boss/Yandir.lua"] = {
-        totemTimer       = "countdown survives the wipe",
-        gryphonTimer     = "countdown survives the wipe",
-        poisonTotemTimer = "a zo_callLater handle; Trial:cancelPending() covers :after handles centrally",
     },
     ["trial/ss/boss/Lokke.lua"] = {
         iceNext         = "ice-tomb sequencer counters, see the issue",
