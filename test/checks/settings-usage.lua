@@ -131,10 +131,96 @@ for _, key in ipairs(keys) do
     end
 end
 
+-- -- Cross-check: per-boss keys vs boss module declarations -------------------
+-- The brace-depth collector above stops at depth 2, so the 25 per-boss toggles
+-- at trials.<trial>.bosses.<name> are invisible to it.  A typo on either side
+-- (settings subkey renamed, or `.key = "..."` misspelled in a boss module)
+-- silently makes that checkbox toggle nothing, because Trial.lua looks bosses up
+-- by bossClass.key at runtime.  This section closes that gap: every bosses
+-- subkey must be declared by some boss module and vice versa.
+--
+-- Scope: the bosses sub-table of each trial (same "bosses = {" anchor the
+-- collector above already recognises) to the matching close brace; and one
+-- `Class.key = "<literal>"` per file under trial/*/boss/*.
+local bossKeys = {}       -- trial -> { name = true }
+local declared = {}       -- key literal -> { file = name }
+do
+    local inTrialsBlock, inBosses, trial, bossesDepth = false, false, nil, 0
+    for line in settingsText:gmatch("[^\r\n]+") do
+        if not inTrialsBlock then
+            if line:match("^%s*trials%s*=%s*{") then inTrialsBlock = true end
+        elseif not inBosses then
+            -- Check the bosses anchor FIRST: a `bosses = {` line also matches
+            -- the bare `name = {` trial-id pattern, and recording it as a
+            -- trial id would corrupt the reported label.
+            if line:match("^%s*bosses%s*=%s*{") then
+                inBosses, bossesDepth = true, 1
+                bossKeys[trial or "?"] = bossKeys[trial or "?"] or {}
+            else
+                local t = line:match("^%s*(%a%w*)%s*=%s*{")
+                if t then trial = t end
+                if trial and line:match("^%s*}%s*,?%s*$") then
+                    trial = nil
+                end
+            end
+        else
+            local opens, closes = 0, 0
+            for _ in line:gmatch("{") do opens = opens + 1 end
+            for _ in line:gmatch("}") do closes = closes + 1 end
+            local name = (bossesDepth == 1 and not line:match("^%s*%-%-"))
+                and line:match("^%s*([%a_][%w_]*)%s*=") or nil
+            if name then bossKeys[trial or "?"][name] = true end
+            bossesDepth = bossesDepth + opens - closes
+            if bossesDepth <= 0 then
+                inBosses, trial = false, nil
+            end
+        end
+    end
+end
+
+-- Enumerate boss modules through the manifest (same file list the reader scan
+-- uses), not a shell glob, so this check honours incha.txt exactly.
+for line in (read(MANIFEST) or ""):gmatch("[^\r\n]+") do
+    local entry = line:match("^%s*(trial/[%w_%-/%.]+/boss/[%w_]+%.lua)%s*$")
+    if entry then
+        local body = read(entry)
+        local k = body and body:match("%.%s*key%s*=%s*\"([^\"]+)\"")
+        if not k then
+            fail("MISSING KEY    %s declares no `Class.key = \"...\"` literal", entry)
+        elseif declared[k] then
+            fail("DUPLICATE KEY  %s redeclares boss key %q already declared by %s",
+                 entry, k, declared[k])
+        else
+            declared[k] = entry
+        end
+    end
+end
+
+local bossKeyCount = 0
+for trial, names in pairs(bossKeys) do
+    for name in pairs(names) do
+        bossKeyCount = bossKeyCount + 1
+        if not declared[name] then
+            fail("NO BOSS FILE   trials.%s.bosses.%s in %s has no boss module declaring key %q",
+                 trial, name, SETTINGS, name)
+        end
+    end
+end
+for k, file in pairs(declared) do
+    local inSettings = false
+    for _, names in pairs(bossKeys) do
+        if names[k] then inSettings = true end
+    end
+    if not inSettings then
+        fail("NO SETTINGS    %s declares boss key %q with no trials.*.bosses entry in %s",
+             file, k, SETTINGS)
+    end
+end
+
 -- -- Report ------------------------------------------------------------------
 if findings == 0 then
-    print(string.format("settings-usage: clean (%d keys checked against %d source files)",
-          #keys, fileCount))
+    print(string.format("settings-usage: clean (%d keys checked against %d source files, %d boss keys cross-checked)",
+          #keys, fileCount, bossKeyCount))
 else
     print(string.format("settings-usage: %d finding(s)", findings))
 end
