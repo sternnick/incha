@@ -28,6 +28,15 @@ local INST_ANIM_FRAMES   = 40
 local INST_ANIM_INTERVAL = 50   -- ms per frame
 local INST_ANIM_KEY      = "Incha_FalgravnInstAnim"
 
+-- why: the tick runs every 50 ms while the debuff is up, once per debuffed
+-- player; string.format per call is pure garbage pressure. The frame paths are
+-- fixed, so build the table once (frame 1..INST_ANIM_FRAMES, same format the
+-- inline call used) and index it.
+local INST_ANIM_TEX = {}
+for i = 1, INST_ANIM_FRAMES do
+    INST_ANIM_TEX[i] = string.format("Incha/resources/instability/frame_%02d.dds", i)
+end
+
 -- Module-level so the state survives boss-instance re-creation on wipe.
 local _instAnim   = {}   -- [unitTag] = { dn = displayName, frame = 0 }
 local _instActive = false
@@ -35,9 +44,7 @@ local _instActive = false
 local function instAnimTick()
     for _, state in pairs(_instAnim) do
         state.frame = (state.frame % INST_ANIM_FRAMES) + 1
-        local tex = string.format("Incha/resources/instability/frame_%02d.dds",
-                                  state.frame)
-        MechanicIcons.set(state.dn, tex, Colors.FLYZONE)
+        MechanicIcons.set(state.dn, INST_ANIM_TEX[state.frame], Colors.FLYZONE)
     end
 end
 
