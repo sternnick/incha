@@ -112,6 +112,10 @@ function Bahsei:onWipe(context, alerts)
     self.nextSickle         = 0
     self.mtUnitId           = false
     self.lastPortalCW       = true
+    -- why: Death Touch arms a personal blue border (CA.border(true, 9000,
+    -- "blue") in handleDeathTouch); a wipe reuses this instance (A3) and
+    -- nothing else clears it, so it would leak across the run-back.
+    CA.border(false, 0, "blue")
 end
 
 -- -- Combat state ----------------------------------------------------------
