@@ -12,7 +12,7 @@ local WRACK            = 184621   -- combatRoute: ACTION_RESULT_BEGIN -> Kite al
 local WRATHSTORM       = 198759   -- combatRoute: ACTION_RESULT_BEGIN -> caAlertCast
 local CALAMITY         = 186728   -- combatRoute: ACTION_RESULT_BEGIN -> Calamity Stack alert
 local EXECUTE          = 198797   -- combatRoute: ACTION_RESULT_BEGIN -> INTERRUPT alert
--- Poisoned Mind  -  4 variants (+184710 kept for safety)
+-- Poisoned Mind  -  5 variants (incl. 184710)
 local POISONED_MIND_1  = 184707   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DURATION -> green border
 local POISONED_MIND_2  = 184709   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DURATION -> green border
 local POISONED_MIND_3  = 199644   -- combatRoute: ACTION_RESULT_EFFECT_GAINED_DURATION -> green border
