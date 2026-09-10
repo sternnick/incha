@@ -216,6 +216,30 @@ that survives a wipe, ability sets that overlap, a string-table key defined twic
 
 ---
 
+## A11 · Route shape is checked statically; only a log can prove a route is right
+
+*2026-09 · settled*
+
+A route table entry can be shaped so that dispatch never calls it — a dropped `.result`
+key (`dispatchCombatEntry` compares `result == nil` and never matches), an undefined
+filter constant (a typo evaluates to nil in Lua), a nil `.fn`, a string ability-id key
+(never registers) — and no test, replay or CI run fails anywhere. `test/checks/route-shape.lua`
+validates every entry against the dispatch contract in `core/CombatHandler.lua`, plus the
+harness's textual-result → number maps, whose drift would make correct routes look dead in
+every replay while the shipping code stays right.
+
+**What it rules out:** relying on the replay to catch a dead route. It cannot — an
+unmatched filter produces no error and no alert, which is the same observable output as
+"the mechanic never happened this pull". The check is log-free on purpose; whether a
+route's filter constant matches what ESO really emits remains LOG_VERIFICATION.
+
+**Considered and rejected:** folding this into the per-ability coverage report (branch
+`feature/route-coverage`, d9019ea). Coverage answers "did it fire in *this* log"; shape
+answers "can it ever fire". A fixture that never mentions an ability cannot distinguish
+those, so both are needed; shape landed first because it needs no logs.
+
+---
+
 ## Resolved questions
 
 Kept so they are not reopened.
