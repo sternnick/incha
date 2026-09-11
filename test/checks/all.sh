@@ -40,6 +40,7 @@ run manifest       luajit test/checks/manifest.lua
 run lang           luajit test/checks/lang.lua
 run contracts      luajit test/checks/contracts.lua
 run filters        luajit test/checks/filters.lua
+run route-shape    luajit test/checks/route-shape.lua
 run settings-usage luajit test/checks/settings-usage.lua
 run state-reset    luajit test/checks/state-reset.lua
 
