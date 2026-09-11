@@ -404,6 +404,15 @@ function Falgravn:onWipe(context, alerts)
 
     -- Reset prisoner feed-stack counters for all 8 torturers.
     for name in pairs(self.PRISONERS) do self.PRISONERS[name] = 0 end
+
+    -- why: wipe reuses this boss instance (docs/decisions/architecture.md A3),
+    -- so an armed countdown keeps its deadline and renders during the run-back.
+    -- onCombatState only re-arms instabilityTimer; the rest wait for their
+    -- first arming event next pull, which is exactly the gap that leaks.
+    self.instabilityTimer:clear()
+    self.bloodBallTimer:clear()
+    self.openGatesTimer:clear()
+    self.torturerTimer:clear()
 end
 
 -- Debug-gated coordinate report.  Prints the player's live world position

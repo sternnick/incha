@@ -118,6 +118,12 @@ function Vrol:onWipe(context, alerts)
     self.fogEndTime        = 0
     self.fogHitCount       = 0
     self.portalKillExpires = 0
+    -- why: wipe reuses this boss instance (docs/decisions/architecture.md A3);
+    -- an armed countdown keeps its deadline and renders during the run-back
+    -- until onCombatState re-arms it on the next pull.
+    self.portalTimer:clear()
+    self.conduitTimer:clear()
+    self.fogTimer:clear()
 end
 
 
