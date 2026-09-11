@@ -74,7 +74,10 @@ for _, trialId in ipairs(TRIALS) do
                               or (rawget(boss, "combatResults") or {})[1] ~= nil
             if not mechanics then
                 for _, kind in ipairs({ "combat", "effect" }) do
-                    for _ in pairs(rawget(boss, kind .. "Routes") or {}) do
+                    -- next() instead of a pairs-loop: same question (is the
+                    -- table non-empty?) without a loop that luacheck flags as
+                    -- executed-at-most-once.
+                    if next(rawget(boss, kind .. "Routes") or {}) ~= nil then
                         mechanics = true
                         break
                     end
@@ -98,9 +101,7 @@ for _, trialId in ipairs(TRIALS) do
                                  where, kind, tostring(id))
                         end
 
-                        if type(entry) == "function" then
-                            -- plain shape: dispatch calls it unconditionally
-                        elseif type(entry) == "table" then
+                        if type(entry) == "table" then
                             if entry.fn == nil then
                                 fail("NIL FN        %s %sRoutes[%s]  - table entry has no .fn, nothing is ever called",
                                      where, kind, tostring(id))
@@ -117,7 +118,9 @@ for _, trialId in ipairs(TRIALS) do
                                 fail("FILTER CONST  %s %sRoutes[%s]  .%s = %s is not a defined constant (undefined names evaluate to nil in Lua - check the spelling)",
                                      where, kind, tostring(id), filterKey, tostring(filter))
                             end
-                        else
+                        elseif type(entry) ~= "function" then
+                            -- plain function shape is legal: dispatch calls it
+                            -- unconditionally. Anything else cannot be called.
                             fail("BAD ENTRY     %s %sRoutes[%s]  entry is %s; dispatch would throw at the call",
                                  where, kind, tostring(id), type(entry))
                         end
