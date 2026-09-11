@@ -91,8 +91,13 @@ test/
                       unit IDs → ESO tags ("player", "boss1", "group3", …).
     log_reader.lua    Parses the ESO encounter log CSV format into a flat list
                       of typed event tables.
+    coverage.lua      Per-ability route coverage: counts what the log LOGGED
+                      per ability id and what the shipping dispatcher
+                      actually DISPATCHED, by wrapping the real route tables
+                      (never by reimplementing dispatch).
   run_log.lua         Entry point.  Builds a real Trial with live boss modules,
-                      replays all log events, prints alerts and a summary.
+                      replays all log events, prints alerts, a route-coverage
+                      report and a summary.
 ```
 
 ### How boss detection works
@@ -110,7 +115,8 @@ injection** strategy:
    `trial.registry.bosses`, so the harness can never drift from the order the
    addon actually registers (`BossRegistry` assigns boss ids from that order).
    `hints` is the only harness-specific entry.
-2. If the boss class is found, `trial.activeBoss` is set to a fresh instance and
+2. If the boss class is found, `trial.activeBosses` is set to a single fresh
+   instance (the same field `Trial:getActiveBoss()` reads since #137) and
    `boss:onEnter(context, alerts)` is called — identical to what the real addon
    does after `EVENT_BOSSES_CHANGED`.
 
@@ -134,9 +140,15 @@ injection** strategy:
 
 ## Phase 2 roadmap
 
+- **Per-ability coverage**: DONE — `luajit test/run_log.lua` now prints, per
+  activated boss, every ability id its shipping routing tables declare and
+  whether the log ever LOGGED it and the dispatcher ever DISPATCHED it.
+  Three verdicts: exercised / LOGGED, NEVER DISPATCHED (id reaches the
+  harness but a filter or gate drops it) / NEVER LOGGED (the log simply did
+  not contain it — may be a wipe-only or role-gated mechanic, not a bug).
+  Bosses that never activated in the log are listed separately; their routes
+  are not attributable to that log.
 - **Snapshot tests**: record alert output per boss encounter, save as fixture
   files, and assert future runs produce identical output.
-- **Per-ability coverage**: count which `combatRoutes` / `effectRoutes` entries
-  were exercised; flag dead entries with no log matches.
 - **Cross-trial runs**: auto-detect and replay all trial zones found in a single
   log file.
