@@ -159,14 +159,14 @@ and format specifiers out of the table so translators see prose.
 
 **The rule:** a translator must be able to edit `lang/*.lua` freely with no functional effect.
 
-**Currently violated.** 23 boss detection fields read the display table
-(`nameAliases = { Lang.t("boss_zmaja") }`), so a translation string decides whether an encounter
-activates. That is also self-defeating as i18n: adding `lang/de.lua` changes what detection compares
-against, making the string table a second, invisible detection contract.
-
-**Direction:** locale-independent detection — arena bounding boxes (#123) and ability-id signature
-detection. The unwired `SIRO_IDS` / `RELE_IDS` / `GALE_IDS` sets in `ZmajaEncounter` are a prototype
-of the second (#109).
+**Violation already fixed.** The coupling described below existed when this decision was
+recorded; at HEAD no detection field reads `lang/` — every `.name` / `.nameAliases` is a plain
+literal string table (`core/BossRegistry.lua` matches those literals against `GetUnitName`), so
+`lang/*.lua` is already purely display data for detection. **The direction below stays open:**
+locale-independent detection — arena bounding boxes (#123) and ability-id signature detection,
+with the unwired `SIRO_IDS` / `RELE_IDS` / `GALE_IDS` sets in `ZmajaEncounter` as a prototype of
+the second (#109). `Lang.t`-driven name resolution is deferred, not planned for the aliases
+themselves.
 
 **Enforced by** `test/checks/lang.lua` for duplicate, missing and orphan keys — not yet for the
 coupling.
