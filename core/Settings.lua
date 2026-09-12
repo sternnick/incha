@@ -129,7 +129,6 @@ function Settings.init()
     if not _sv.migratedFromBSCHTKA and BSCHTKA and BSCHTKA.SV_ACC then
         local acc = BSCHTKA.SV_ACC
 
-        if acc.SHOW_UI_BOSS    ~= nil then _sv.trials.ka.showBossUI     = acc.SHOW_UI_BOSS    end
         if acc.SHOW_UI_PERCENT ~= nil then _sv.trials.ka.showPercent    = acc.SHOW_UI_PERCENT end
         if acc.PORTAL_ICON_VROL ~= nil then _sv.trials.ka.portalIconVrol = acc.PORTAL_ICON_VROL end
 
