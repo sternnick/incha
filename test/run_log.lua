@@ -102,6 +102,15 @@ local function injectBoss(trial, bossClass)
 
     local instance = bossClass.new()
     trial.activeBoss = instance
+    -- why: the dispatcher (core/EventDispatcher.lua on the active line,
+    -- core/CombatHandler.lua on master) resolves the boss through
+    -- trial:getActiveBoss() == trial.activeBosses[1] (core/Trial.lua).
+    -- Populating only .activeBoss made getActiveBoss() return nil for every
+    -- fixture, so every replay dispatched ZERO alerts while exiting 0 —
+    -- the green-replay blindness agents/workflow-code-review.md §3.3 warns
+    -- about, measured 2026-09-12 on master acd3f73 AND active line 431b9d9:
+    -- ka/ss fixtures Alerts 0 rc 0.
+    trial.activeBosses = { instance }
     trial.context:setBoss(instance)
     trial.context.inCombat = false
 
