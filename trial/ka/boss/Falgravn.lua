@@ -816,7 +816,7 @@ end
 local function handleLinkEffect(self, context, alerts, changeType, abilityId,
                                  unitTag, unitId, unitName, stackCount)
     if changeType ~= EFFECT_RESULT_GAINED then return end
-    local valid = IsUnitValid(unitTag)
+    local valid = DoesUnitExist(unitTag)
     local name  = GetUnitName(unitTag) or "?"
     local _, cx, cy, cz = GetUnitWorldPosition(unitTag)
     Log.debug("[LN-DEBUG] Conduit LINK_EFFECT gained | unitTag=%s unitId=%s valid=%s name=%s world=(%.0f,%.0f,%.0f)",
