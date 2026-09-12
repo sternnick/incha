@@ -13,7 +13,11 @@ local CastDur = {}
 --- Returns the cast duration for abilityId in milliseconds, or fallback if
 --- GetAbilityCastInfo returns 0 / nil (instant-cast or unknown ability).
 function CastDur.get(abilityId, fallback)
-    local dur = select(1, GetAbilityCastInfo(abilityId)) or 0
+    -- why: GetAbilityCastInfo returns (channeled:boolean, durationValue:integer)
+    -- per UESP (esodecoded.com/dev/api/GetAbilityCastInfo, 2026-09-12) — the
+    -- duration is the SECOND return; select(1,...) grabbed the channeled boolean.
+    local _, dur = GetAbilityCastInfo(abilityId)
+    dur = dur or 0
     return dur > 0 and dur or (fallback or 2000)
 end
 

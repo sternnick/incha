@@ -210,7 +210,9 @@ function SetMapToPlayerLocation() end
 function GetMapPlayerPosition(unitTag) return 0.5, 0.5 end
 
 -- -- Ability info ----------------------------------------------------------
-function GetAbilityCastInfo(abilityId) return 2000 end
+-- real API returns (channeled:boolean, durationValue:integer) — stub matches
+-- that two-value shape so it cannot mask arity bugs in callsites.
+function GetAbilityCastInfo(abilityId) return false, 2000 end
 function GetAbilityName(abilityId)     return "" end
 function GetAbilityIcon(abilityId)     return "" end
 -- GetAbilityDuration is defined above, alongside the other role/duration
