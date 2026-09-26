@@ -1,0 +1,70 @@
+[Incha][warn] Dispatcher: unknown ability 137215 in beginCast.started
+[Incha][warn] Dispatcher: unknown ability 134854 in beginCast.started
+[Incha][warn] Dispatcher: unknown ability 133433 in effectChanged.gained
+Reading log: test/fixtures/ka.log
+Parsed 33 entries (0 parse errors)
+Target trial: KA (zone 1196)
+
+=== Trial: KA (zone 1196) ===
+[     2000ms] BOSS    Yandir the Butcher activated (key=yandir)
+[     2100ms] ACTION  Kill! (Poison Totem)
+[     2200ms] TRACKER row 1   Totem                            19.9s
+[     2200ms] TRACKER row 2   Gryphon                          59.8s
+[     2500ms] ACTION  Block! (Gargoyle Totem)
+[     2600ms] ACTION  Yandir Healing
+[     2700ms] ACTION  Block! (Yandir Jump)
+[     5000ms] BOSS    Yandir the Butcher removed
+[     6000ms] BOSS    Captain Vrol activated (key=vrol)
+[     6100ms] ACTION  Kill! (Conjurer)
+[     6200ms] TRACKER row 1   Next Fog                         29.8s
+[     6200ms] TRACKER row 2   Conduit                          39.8s
+[     6200ms] TRACKER row 3   Portal                           44.9s
+[     6200ms] ACTION  Dodge! (Fog)
+[     6400ms] TRACKER row 1   |c4dbfffFog Clears|r             29.8s
+[     6400ms] ACTION  Kill! (Harpoon)
+[     6500ms] ACTION  Interrupt! (Apothecary)
+[     9000ms] BOSS    Captain Vrol removed
+[    10000ms] BOSS    Lord Falgravn activated (key=falgravn)
+[    10100ms] ACTION  Interrupt! (Infuser)
+[    10200ms] TRACKER row 1   Instability                      9.8s
+[    10300ms] ACTION  Move!
+[    10400ms] ACTION  Block! (Bloody Frenzy)
+[    10500ms] ACTION  Dodge! (Blood Cleave)
+[    10600ms] ACTION  Block! (Blood Fountain)
+[    11000ms] ACTION  Kill! (Prison)
+[    15000ms] BOSS    Lord Falgravn removed
+
+-- Per-ability coverage -------------------------------------
+  yandir            combat 7/11  effect 0/2
+    NEVER SEEN  COMBAT  136591
+    NEVER SEEN  COMBAT  135324
+    NEVER SEEN  COMBAT  132511
+    NEVER SEEN  COMBAT  135369
+    NEVER SEEN  EFFECT  133559
+    NEVER SEEN  EFFECT  132511
+  vrol              combat 5/5  effect 0/1
+    NEVER SEEN  EFFECT  134016
+  falgravn          combat 7/15  effect 4/9
+    NEVER SEEN  COMBAT  139620
+    NEVER SEEN  COMBAT  139378
+    NEVER SEEN  COMBAT  136727
+    NEVER SEEN  COMBAT  139633
+    NEVER SEEN  COMBAT  136958
+    NEVER SEEN  COMBAT  140944
+    NEVER SEEN  COMBAT  135271
+    NEVER SEEN  COMBAT  136693
+    NEVER SEEN  EFFECT  140941
+    NEVER SEEN  EFFECT  137215
+    NEVER SEEN  EFFECT  136548
+    NEVER SEEN  EFFECT  137314
+    NEVER SEEN  EFFECT  139961
+
+-- Summary --------------------------------------------------
+  COMBAT_EVENT entries processed : 20
+  EFFECT_CHANGED entries processed: 5
+  Bosses activated                : 3
+  Alerts fired                    : 14
+  Tracker rows written (A3)       : 100 writes across 3 keys
+  Handler errors                  : 0
+  Route entries never seen        : 20
+
