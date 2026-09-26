@@ -13,7 +13,14 @@ local CastDur = {}
 --- Returns the cast duration for abilityId in milliseconds, or fallback if
 --- GetAbilityCastInfo returns 0 / nil (instant-cast or unknown ability).
 function CastDur.get(abilityId, fallback)
-    local raw = select(1, GetAbilityCastInfo(abilityId))
+    -- why: official signature (ESOUIDocumentation.txt, API 101050, verified
+    -- esodecoded.com/dev/api/GetAbilityCastInfo 2026-09-16) returns
+    -- (channeled bool, durationValue ms) — the duration is the SECOND return.
+    -- select(1, ...) captured the channeled flag, type() rejected it, and every
+    -- caller silently fell back to its empirical constant: the API value was
+    -- dead tree-wide.  Reference usage agrees: Combat Metrics binds
+    -- `local channeled, castTime = GetAbilityCastInfo(abilityId)`.
+    local _, raw = GetAbilityCastInfo(abilityId)
     local dur = type(raw) == "number" and raw or 0
     return dur > 0 and dur or (fallback or 2000)
 end
