@@ -12,6 +12,7 @@ local Preview     = require("ui.Preview")
 local Settings    = require("core.Settings")
 local Fmt         = require("core.Fmt")
 local DebugPanel  = require("ui.DebugPanel")
+local Thresholds  = require("ui.Thresholds")
 local ZoneManager = require("core.ZoneManager")
 
 local Menu = {}
@@ -472,6 +473,7 @@ local function printHelp()
     Log.print("  %s scale <n>      -  set overlay scale (0.5 - 3.0)", ADDON_SLASH)
     Log.print("  %s reset          -  reset both overlay panels to default position", ADDON_SLASH)
     Log.print("  %s status         -  dump trial / boss / tracker panel state", ADDON_SLASH)
+    Log.print("  %s thresholds     -  HM health-threshold inventory + live samples", ADDON_SLASH)
     Log.print("  %s dp             -  toggle the debug replay panel (also /idp)", ADDON_SLASH)
     Log.print("  /ip panel          -  show sample panel data (use /ip, not /incha)")
     Log.print("  /ip inst           -  animate instability head icon")
@@ -527,6 +529,9 @@ local function handleSlash(text)
             trial and tostring(trial._injected) or "-",
             trial and tostring(trial.context.inCombat) or "-")
         Panel.status()
+
+    elseif cmd == "thresholds" then
+        Thresholds.dump()
 
     elseif cmd == "preview" then
         local sub = arg:match("^%s*(%S*)")
