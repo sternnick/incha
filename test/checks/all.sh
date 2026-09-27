@@ -45,6 +45,7 @@ run settings-usage luajit test/checks/settings-usage.lua
 run state-reset    luajit test/checks/state-reset.lua
 run registrations  luajit test/checks/registrations.lua
 run health-rules   luajit test/checks/health_rules.lua
+run hm-thresholds  luajit test/checks/hm-thresholds.lua
 run lifecycle      luajit test/checks/lifecycle.lua
 run tracker        luajit test/checks/tracker.lua
 
