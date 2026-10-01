@@ -208,6 +208,8 @@ local FALGRAVN_HM           = 137215  -- HM confirmation ability
 local FALGRAVN_SACRIFICE    = 139620  -- Prisoner saved
 local FALGRAVN_TORTURER_LA  = 136958  -- Torturer light attack (non-tank dodge)
 
+local FALGRAVN_PRISON_CAST  = 132468  -- combatRoute: ACTION_RESULT_BEGIN -> early "Kill! (Prison)" warning ~1.5s before the 132473 debuff lands (Crutch KynesAegis.lua:103) -- TODO: verify in-game (#224)
+
 -- Effect change IDs
 local FALGRAVN_PRISON       = 132473  -- Prison debuff on player
 local FALGRAVN_INSTABILITY2 = 140941  -- Instability (non-HM variant)
@@ -788,6 +790,19 @@ local function handlePrisonEffectGained(boss, context, alerts, abilityId, unitNa
     if dn and dn ~= "" then boss.osiPrison[unitTag] = dn end
 end
 
+-- Early prison warning: the Bitter Knight's cast BEGIN (132468) fires ~1.5 s
+-- before the 132473 debuff lands ("seems to be 1.5s for the cast, then 8s for
+-- the prison" -- CrutchAlerts KynesAegis.lua:44-45). Crutch guards the BEGIN
+-- handler with hitValue == 1500 (KynesAegis.lua:31); the EventDispatcher does
+-- not expose hitValue to handlers, so that cast-time guard cannot be
+-- replicated offline -- the alert may also fire on other BEGIN results of the
+-- same id. Single reference (Crutch), 0 lines in test/fixtures/ka.log:
+-- HYPOTHESIS_REF_ONLY, verify in-game (#224).
+local function handlePrisonCast(boss, context, alerts, abilityId, sourceUnitName,
+                                unitTag, unitId, sourceUnitId, unitName)
+    alerts:showAction(Lang.t("ka_falgravn_kill_prison"))
+end
+
 local function handlePrisonEffectFaded(boss, context, alerts, abilityId, unitName,
                                         unitTag, unitId, stackCount)
     CA.castAlertsStop(boss.prisonBars[unitTag])
@@ -864,6 +879,8 @@ local _beginCastInstant = {
     [FALGRAVN_SACRIFICE]    = { type = AlertTypes.CUSTOM, fn = handleSacrifice },
     [FALGRAVN_TORTURER_ESC] = { type = AlertTypes.CUSTOM, fn = handleTorturerEsc },
     [FALGRAVN_TORTURER_LA]  = { type = AlertTypes.CUSTOM, fn = handleTorturerLa },
+    -- Prison early warning (cast BEGIN ~1.5s before the 132473 debuff)
+    [FALGRAVN_PRISON_CAST]  = { type = AlertTypes.CUSTOM, fn = handlePrisonCast },
 }
 
 local _beginCastStarted = {
@@ -885,6 +902,8 @@ local _beginCastStarted = {
     [FALGRAVN_SACRIFICE]    = { type = AlertTypes.CUSTOM, fn = handleSacrifice },
     [FALGRAVN_TORTURER_ESC] = { type = AlertTypes.CUSTOM, fn = handleTorturerEsc },
     [FALGRAVN_TORTURER_LA]  = { type = AlertTypes.CUSTOM, fn = handleTorturerLa },
+    -- Prison early warning (cast BEGIN ~1.5s before the 132473 debuff)
+    [FALGRAVN_PRISON_CAST]  = { type = AlertTypes.CUSTOM, fn = handlePrisonCast },
 }
 
 Falgravn.events = {
