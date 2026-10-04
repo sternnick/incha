@@ -378,6 +378,9 @@ M.se_chimera_chain_label    = "Chain Ltng"
 
 M.lc_swap_hindered          = "SWAP! (Hindered)"
 M.lc_hindered_alert         = "Tank swap — Hindered!"
+M.lc_conv_tether_soon       = "Tethers incoming — pick partners!"
+M.lc_conv_weakening_charge  = "Weakening Charge → %s"
+M.lc_conv_weakening_you     = "YOU"
 
 -- ── Lucent Citadel ── RyelazEncounter ────────────────────────────────────────
 
