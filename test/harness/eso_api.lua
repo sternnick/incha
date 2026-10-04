@@ -216,7 +216,11 @@ function SetMapToPlayerLocation() end
 function GetMapPlayerPosition(unitTag) return 0.5, 0.5 end
 
 -- -- Ability info ----------------------------------------------------------
-function GetAbilityCastInfo(abilityId) return 2000 end
+-- why: mirrors the official arity (channeled bool, durationValue ms) — a
+-- single-return stub hides any code that reads the wrong return position
+-- (see core/EventDispatcher.lua onCombatEventFiltered, verified against
+-- ESOUIDocumentation.txt via esodecoded.com 2026-09-16).
+function GetAbilityCastInfo(abilityId) return false, 2000 end
 function GetAbilityName(abilityId)     return "" end
 function GetAbilityIcon(abilityId)     return "" end
 -- GetAbilityDuration is defined above, alongside the other role/duration
