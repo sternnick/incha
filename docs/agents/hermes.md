@@ -43,6 +43,21 @@ Findings as comments on the item that owns them; a finding with no home becomes 
 
 none
 
+## Version and upstream watch (contract §11a)
+
+The applications whose version matters in this repository, with the pin location, the upstream source,
+and the condition under which a difference is a **finding**:
+
+- **luajit** (toolchain) — pinned as the `luajit` version the repository's CI installs or requires · upstream: `LuaJIT/LuaJIT` · finding only if: a semantics change that would break the checks CI runs
+
+A difference is a finding only for: an advisory covering the **installed** version · a release that
+fixes a defect this repository recorded · a breaking change. `a newer version exists` is not a
+finding. Report only — never install, upgrade, apply or restart. Check with:
+
+```bash
+python3 scripts/version-watch.py --repo incha --dir <clone> --advisories
+```
+
 ## Dispositions
 
 The terminal dispositions are contract §7 — exactly one per run, as the report's last line. If a
