@@ -6,6 +6,10 @@
 ---   LavaGeyser (124546): player or nearby group (dist < 2.8) -> Dodge! bar
 ---   NextFlare (121722 / 121459): fight-start +6s / BEGIN +32s / EFFECT_FADED +30s
 ---   Cataclysm (122598): cast duration CA bar + landing = cataEnd + 6.8 s
+---   Takeoff (124910/124915/124916): HP-threshold takeoff events -> landing
+---     countdown (+22.8 / +23.4 / +23.5 s), replacing pure HP-window guessing
+---   AimOff (125693): re-arms the current bracket's takeoff landing (Crutch
+---     OnYolFly branch: <30% -> 23.5, <55% -> 23.4, <80% -> 22.8)
 ---   Boss HP thresholds: 76% / 51% / 26% -> "Can Fly In X%"
 
 local SunspireCommon = require("trial.ss.SunspireCommon")
@@ -27,6 +31,10 @@ local LAVA_GEYSER   = 124546   -- beginCast: Dodge alert (player/nearby)
 local NEXT_FLARE_A  = 121722   -- beginCast: nextFlareTime +32s
 local NEXT_FLARE_B  = 121459   -- combatEvent.other: ACTION_RESULT_EFFECT_FADED -> nextFlareTime +30s
 local CATACLYSM     = 122598   -- beginCast: caAlertCast + landing timer
+local TAKEOFF_75    = 124910   -- beginCast/other: takeoff at 76% bracket -> landing +22.8 s
+local TAKEOFF_50    = 124915   -- beginCast/other: takeoff at 51% bracket -> landing +23.4 s
+local TAKEOFF_25    = 124916   -- beginCast/other: takeoff at 26% bracket -> landing +23.5 s
+local AIM_OFF       = 125693   -- combatEvent.other EFFECT_GAINED: aim-off re-arms current-bracket takeoff
 
 
 -- -- Fallback durations (empirical; replace if GetAbilityCastInfo becomes reliable) -
@@ -134,6 +142,47 @@ local function handleNextFlareB(boss, context, alerts, abilityId, ...)
     boss.nextFlareTime = GetGameTimeMilliseconds() / 1000 + 30
 end
 
+-- Takeoff landing times (seconds) — CrutchAlerts Sunspire.lua:300/322/344
+-- (DisplayDamageable(22.8 / 23.4 / 23.5) in OnYolFly75/50/25).  HYPOTHESIS_REF_ONLY:
+-- one reference, no SS log lines for these ids yet; ss.log has zero takeoff events.
+local TAKEOFF_LAND_75 = 22.8   -- takeoff at the 76% HP bracket
+local TAKEOFF_LAND_50 = 23.4   -- takeoff at the 51% HP bracket
+local TAKEOFF_LAND_25 = 23.5   -- takeoff at the 26% HP bracket
+
+-- Takeoff events land a fixed time after the boss lifts off; the row-4
+-- landing renderer (showLandingOrFlyLine) already reads landingTimer, so
+-- arming it here is the whole alert.  No CA bar: Crutch shows a damageable
+-- countdown, the tracker row is Incha's equivalent.
+local function handleTakeoff(boss, context, alerts, abilityId, landingSec, ...)
+    boss.landingTimer:reset(landingSec)
+end
+
+local function handleTakeoff75(boss, context, alerts, abilityId, ...)
+    handleTakeoff(boss, context, alerts, abilityId, TAKEOFF_LAND_75)
+end
+
+local function handleTakeoff50(boss, context, alerts, abilityId, ...)
+    handleTakeoff(boss, context, alerts, abilityId, TAKEOFF_LAND_50)
+end
+
+local function handleTakeoff25(boss, context, alerts, abilityId, ...)
+    handleTakeoff(boss, context, alerts, abilityId, TAKEOFF_LAND_25)
+end
+
+-- AimOff (125693): Yolna re-acquires aim without a threshold-crossing event;
+-- Crutch's OnYolFly (Sunspire.lua:363-372) re-arms by current HP bracket with
+-- the same three landing times.  HP brackets here use Crutch's branch points
+-- (30/55/80), not Incha's can-fly thresholds (26/51/76): the re-arm decides
+-- which fly we are mid-, and Crutch's numbers are the only ref evidence.
+local function handleAimOff(boss, context, alerts, abilityId, ...)
+    local hp = context.healthPercent or 100
+    if     hp < 30 then boss.landingTimer:reset(TAKEOFF_LAND_25)
+    elseif hp < 55 then boss.landingTimer:reset(TAKEOFF_LAND_50)
+    elseif hp < 80 then boss.landingTimer:reset(TAKEOFF_LAND_75)
+    end
+    -- >= 80%: no takeoff has happened yet, nothing to re-arm.
+end
+
 local function handleCataclysm(boss, context, alerts, abilityId, ...)
     local dur = CastDur.get(CATACLYSM, FALLBACK_CATA_DUR)
     boss.cataTimer:reset(dur / 1000)
@@ -154,6 +203,13 @@ local _beginCastEntry = {
     [LAVA_GEYSER]  = { type = AlertTypes.CUSTOM, fn = handleLavaGeyser },
     [NEXT_FLARE_A] = { type = AlertTypes.CUSTOM, fn = handleNextFlareA },
     [CATACLYSM]    = { type = AlertTypes.CUSTOM, fn = handleCataclysm },
+    -- Takeoffs are scripted casts: Crutch registers them with result=nil
+    -- (Sunspire.lua:491-493), i.e. fires on the BEGIN F/T pair — that is the
+    -- beginCast path here.  instant+started both armed so the landing timer
+    -- starts whether the engine reports them as instant or as a timed cast.
+    [TAKEOFF_75]   = { type = AlertTypes.CUSTOM, fn = handleTakeoff75 },
+    [TAKEOFF_50]   = { type = AlertTypes.CUSTOM, fn = handleTakeoff50 },
+    [TAKEOFF_25]   = { type = AlertTypes.CUSTOM, fn = handleTakeoff25 },
 }
 
 for k, v in pairs(SunspireCommon.beginCastEntries) do
@@ -174,6 +230,10 @@ Yolna.events = {
     combatEvent = {
         other = {
             [NEXT_FLARE_B] = { type = AlertTypes.CUSTOM, fn = handleNextFlareB },
+            -- Crutch registers AimOff with ACTION_RESULT_EFFECT_GAINED on
+            -- COMBAT_EVENT (Sunspire.lua:494); that result has no dedicated
+            -- bucket, so combatEvent.other is Incha's equivalent path.
+            [AIM_OFF]      = { type = AlertTypes.CUSTOM, fn = handleAimOff },
         },
     },
 }
