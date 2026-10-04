@@ -184,14 +184,21 @@ local function runEntry(entry, boss, context, alerts, abilityId, sourceUnitName,
     if alertHandler then return alertHandler(abilityId, entry, sourceUnitName) end
 end
 
-local function lookupAndRun(bucket, subPath, boss, context, alerts, abilityId, sourceUnitName, ...)
+--- subPrefix + leaf together spell the full dotted sub-path ("combatEvent."
+--- + "damage" == "combatEvent.damage"); leaf is the last segment on its own.
+--- The hot path must never rebuild that string: LuaJIT cannot JIT the
+--- anchored "$" in subPath:match("[^.]+$"), so one match de-jits the whole
+--- dispatch chain (~790 ns/event, ~80% of dispatch cost) even with tracing
+--- off, because setDispatchContext runs before runEntry. Call sites pass
+--- both parts as constants; only warnUnknown concatenates, on a miss.
+local function lookupAndRun(bucket, subPrefix, leaf, boss, context, alerts, abilityId, sourceUnitName, ...)
     if not bucket then return end
     local entry = bucket[abilityId]
     if entry == nil then
-        warnUnknown(subPath, abilityId)
+        warnUnknown(subPrefix .. leaf, abilityId)  -- why: cold path only, so the concat + alloc never runs on hits
         return
     end
-    Log.setDispatchContext(abilityId, subPath:match("[^.]+$"))
+    Log.setDispatchContext(abilityId, leaf)
     return runEntry(entry, boss, context, alerts, abilityId, sourceUnitName, ...)
 end
 
@@ -211,17 +218,17 @@ function EventDispatcher.dispatchBeginCast(boss, context, alerts,
     if didFire then
         -- T event: cast completed — cancel the interrupted timer, run executed.
         cancelPending(sourceUnitId, abilityId)
-        lookupAndRun(bc.executed, "beginCast.executed",
+        lookupAndRun(bc.executed, "beginCast.", "executed",
             boss, context, alerts, abilityId, sourceUnitName, ...)
 
     elseif castTime == 0 then
         -- F + castTime=0: instant — fires immediately, no timer needed.
-        lookupAndRun(bc.instant, "beginCast.instant",
+        lookupAndRun(bc.instant, "beginCast.", "instant",
             boss, context, alerts, abilityId, sourceUnitName, ...)
 
     else
         -- F + castTime>0: cast started — run started handler, arm interrupted timer.
-        lookupAndRun(bc.started, "beginCast.started",
+        lookupAndRun(bc.started, "beginCast.", "started",
             boss, context, alerts, abilityId, sourceUnitName, ...)
 
         -- The interrupt-detection timer costs one closure, one table and one
@@ -276,7 +283,9 @@ function EventDispatcher.dispatchEffectChanged(boss, context, alerts,
     local bucketName = _effectChangeSubtype[changeType]
     if not bucketName then return end
     local ec = boss.events.effectChanged
-    lookupAndRun(ec[bucketName], "effectChanged." .. bucketName,
+    -- bucketName IS the leaf of "effectChanged." .. bucketName, so it is
+    -- passed as the leaf directly: no concat, no match on the hot path.
+    lookupAndRun(ec[bucketName], "effectChanged.", bucketName,
         boss, context, alerts, abilityId, sourceUnitName, ...)
 end
 
@@ -288,7 +297,9 @@ function EventDispatcher.dispatchCombatEvent(boss, context, alerts,
     if not boss.events or not boss.events.combatEvent then return end
     local bucketName = _combatResultSubtype[result] or "other"
     local ce = boss.events.combatEvent
-    lookupAndRun(ce[bucketName], "combatEvent." .. bucketName,
+    -- bucketName IS the leaf of "combatEvent." .. bucketName (fall-through
+    -- "other" included), so it is passed as the leaf directly.
+    lookupAndRun(ce[bucketName], "combatEvent.", bucketName,
         boss, context, alerts, abilityId, sourceUnitName, ...)
 end
 
