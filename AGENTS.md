@@ -40,3 +40,8 @@ local SHADOW_SPLASH = 105123  -- combatRoute: ACTION_RESULT_BEGIN → cast bar +
 ```
 
 If the name or timing is unverified in-game, append `-- TODO: verify in-game (#NNN)`.
+
+<!-- hermes-governance-pointer -->
+## Cross-repository governance
+
+Automated and scheduled agents: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent` (contract `1.0.0`) **outranks this file** and is read at the start of every run. Delivery here is a branch plus an open pull request — never merge, never push `master`. Write mode: `branch_pr`. Before posting any artifact run `python3 scripts/hermes-governor.py preflight --file <artifact>`
