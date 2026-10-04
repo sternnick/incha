@@ -230,15 +230,26 @@ local function build()
     -- Two separate callbacks so each updates only its own state variable;
     -- a shared callback lets the last-firing scene overwrite the result of
     -- the first (race when "hud→showing" fires before "hudui→hiding").
+    -- why: ESO kills a scene StateChange callback that raises an error and
+    -- leaves it unregistered for the rest of the session — a throw inside the
+    -- apply* calls would silently freeze overlay visibility until a /ui reload.
+    -- pcall wraps the body (Xalvakka.lua:106 pattern) so a failure logs and the
+    -- callback stays alive for the next scene transition.
     SCENE_MANAGER:GetScene("hud"):RegisterCallback("StateChange", function(_, newState)
-        hudState = newState
-        applyTrackerVisibility()
-        applyAlertVisibility()
+        local ok, err = pcall(function()
+            hudState = newState
+            applyTrackerVisibility()
+            applyAlertVisibility()
+        end)
+        if not ok then Log.warn("Panel hud StateChange: %s", tostring(err)) end
     end)
     SCENE_MANAGER:GetScene("hudui"):RegisterCallback("StateChange", function(_, newState)
-        hudUiState = newState
-        applyTrackerVisibility()
-        applyAlertVisibility()
+        local ok, err = pcall(function()
+            hudUiState = newState
+            applyTrackerVisibility()
+            applyAlertVisibility()
+        end)
+        if not ok then Log.warn("Panel hudui StateChange: %s", tostring(err)) end
     end)
 end
 
