@@ -143,9 +143,15 @@ injection** strategy:
 
 ## Phase 2 roadmap
 
-- **Snapshot tests**: record alert output per boss encounter, save as fixture
-  files, and assert future runs produce identical output.
-- **Per-ability coverage**: count which `combatRoutes` / `effectRoutes` entries
-  were exercised; flag dead entries with no log matches.
+- **Snapshot tests**: ~~record alert output per boss encounter, save as fixture
+  files, and assert future runs produce identical output.~~ **DONE** —
+  `test/checks/snapshot.lua` replays every `test/fixtures/<trial>.log` through
+  `test/run_log.lua` and diffs the complete output (alerts, tracker rows,
+  per-ability coverage, summary) against `test/snapshots/<trial>.txt`. Run
+  with `--update` after an *intentional* behaviour change, review the golden
+  diff, commit both. CI enforces it.
+- **Per-ability coverage**: ~~count which `combatRoutes` / `effectRoutes`
+  entries were exercised; flag dead entries with no log matches.~~ **DONE** —
+  the replay summary reports per-boss seen/never-seen counts (#284).
 - **Cross-trial runs**: auto-detect and replay all trial zones found in a single
   log file.

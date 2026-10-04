@@ -1,0 +1,106 @@
+Reading log: test/fixtures/ss.log
+Parsed 22 entries (0 parse errors)
+Target trial: SS (zone 1121)
+
+=== Trial: SS (zone 1121) ===
+[     2000ms] BOSS    Lokkestiiz activated (key=lokke)
+[     2400ms] TRACKER row 1   |c00ffffIce Tomb 1|r             -
+[     2600ms] TRACKER row 2   [A] |ccc4545Take|r               9.8s
+[     6000ms] BOSS    Yolnahkriin activated (key=yolna)
+[     6100ms] ACTION  Kill Atro!
+[     6200ms] TRACKER row 1   |ccc4545Next Flare|r             5.8s
+[     6600ms] TRACKER row 2   |ccc4545Cataclysm|r              1.8s
+[     6600ms] TRACKER row 4   |c5cd65cLanding|r                8.6s
+[     8400ms] TRACKER row 2   (cleared)
+[    10000ms] BOSS    Nahviintaas activated (key=nahvii)
+[    10300ms] ACTION  > Sweep Breath >>>
+[    10400ms] ACTION  <<< Sweep Breath <
+[    10600ms] ACTION  SOUL TEAR!
+[    10800ms] TRACKER row 3   |ccc4545Storm Start|r            8.4s
+[    10800ms] TRACKER row 4   |c5cd65cLanding|r                20.2s
+[    11000ms] TRACKER row 2   |cff0000ENTER PORTAL|r           13.8s
+[    14000ms] TRACKER row 2   |c80ffd4Portal|r                 10.8s
+[    15000ms] BOSS    Nahviintaas removed
+
+-- Per-ability coverage -------------------------------------
+  lokke             combat 2/23  effect 2/3
+    NEVER SEEN  COMBAT  119817
+    NEVER SEEN  COMBAT  122821
+    NEVER SEEN  COMBAT  122822
+    NEVER SEEN  COMBAT  119796
+    NEVER SEEN  COMBAT  119283
+    NEVER SEEN  COMBAT  115592
+    NEVER SEEN  COMBAT  122124
+    NEVER SEEN  COMBAT  116836
+    NEVER SEEN  COMBAT  115723
+    NEVER SEEN  COMBAT  121849
+    NEVER SEEN  COMBAT  123026
+    NEVER SEEN  COMBAT  120890
+    NEVER SEEN  COMBAT  117075
+    NEVER SEEN  COMBAT  121723
+    NEVER SEEN  COMBAT  117071
+    NEVER SEEN  COMBAT  121980
+    NEVER SEEN  COMBAT  122012
+    NEVER SEEN  COMBAT  121422
+    NEVER SEEN  COMBAT  121833
+    NEVER SEEN  COMBAT  122820
+    NEVER SEEN  COMBAT  118860
+    NEVER SEEN  EFFECT  116044
+  yolna             combat 4/23  effect 0/0
+    NEVER SEEN  COMBAT  119817
+    NEVER SEEN  COMBAT  121833
+    NEVER SEEN  COMBAT  119796
+    NEVER SEEN  COMBAT  119283
+    NEVER SEEN  COMBAT  115592
+    NEVER SEEN  COMBAT  122124
+    NEVER SEEN  COMBAT  116836
+    NEVER SEEN  COMBAT  121459
+    NEVER SEEN  COMBAT  115723
+    NEVER SEEN  COMBAT  121849
+    NEVER SEEN  COMBAT  120890
+    NEVER SEEN  COMBAT  117075
+    NEVER SEEN  COMBAT  121723
+    NEVER SEEN  COMBAT  122012
+    NEVER SEEN  COMBAT  121422
+    NEVER SEEN  COMBAT  117071
+    NEVER SEEN  COMBAT  121980
+    NEVER SEEN  COMBAT  123026
+    NEVER SEEN  COMBAT  118860
+  nahvii            combat 8/33  effect 0/2
+    NEVER SEEN  COMBAT  119817
+    NEVER SEEN  COMBAT  117938
+    NEVER SEEN  COMBAT  121254
+    NEVER SEEN  COMBAT  117308
+    NEVER SEEN  COMBAT  119796
+    NEVER SEEN  COMBAT  115592
+    NEVER SEEN  COMBAT  120890
+    NEVER SEEN  COMBAT  121980
+    NEVER SEEN  COMBAT  121216
+    NEVER SEEN  COMBAT  118860
+    NEVER SEEN  COMBAT  121833
+    NEVER SEEN  COMBAT  119283
+    NEVER SEEN  COMBAT  122124
+    NEVER SEEN  COMBAT  116836
+    NEVER SEEN  COMBAT  121436
+    NEVER SEEN  COMBAT  115723
+    NEVER SEEN  COMBAT  123026
+    NEVER SEEN  COMBAT  121723
+    NEVER SEEN  COMBAT  121422
+    NEVER SEEN  COMBAT  121213
+    NEVER SEEN  COMBAT  121849
+    NEVER SEEN  COMBAT  117071
+    NEVER SEEN  COMBAT  121411
+    NEVER SEEN  COMBAT  122012
+    NEVER SEEN  COMBAT  117075
+    NEVER SEEN  EFFECT  117251
+    NEVER SEEN  EFFECT  123067
+
+-- Summary --------------------------------------------------
+  COMBAT_EVENT entries processed : 14
+  EFFECT_CHANGED entries processed: 2
+  Bosses activated                : 3
+  Alerts fired                    : 4
+  Tracker rows written (A3)       : 149 writes across 4 keys
+  Handler errors                  : 0
+  Route entries never seen        : 68
+
