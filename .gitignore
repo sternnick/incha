@@ -25,5 +25,9 @@ C*
 # Working notes (not part of the codebase)
 abilities.md
 
-# Daily agent report — overwritten each run; must not pollute feature branches
+# Daily agent report and fork coordination notes - overwritten each run, so they
+# are working state, not source. Once either is committed the ignore stops
+# applying to it and two branches that both add it collide on merge; see
+# test/checks/per-run-artifacts.sh, which enforces this in CI.
 DAILY_REPORT.md
+FORK_COORDINATION.md
