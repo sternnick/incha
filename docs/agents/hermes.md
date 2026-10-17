@@ -1,6 +1,6 @@
 # Hermes role — sternnick/incha
 
-contract_version: `1.1.0`
+contract_version: `1.2.0`
 contract: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent` — this is the authority; the file you are reading is
 the repository delta and it may only **tighten** the contract, never loosen it.
 mode: `branch_pr` — with the meaning given in contract §3.
