@@ -1,6 +1,6 @@
 # Hermes role — sternnick/incha
 
-contract_version: `1.2.0`
+contract_version: `1.3.0`
 contract: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent` — this is the authority; the file you are reading is
 the repository delta and it may only **tighten** the contract, never loosen it.
 mode: `branch_pr` — with the meaning given in contract §3.
@@ -34,6 +34,13 @@ Daily and weekly passes exist as installed jobs; keep the schedule, keep the obj
 - This repository is PUBLIC: never commit or quote anything you would not publish — no hostnames, tokens, or private infrastructure facts
 - Lua changes run under LuaJIT semantics, not Lua 5.4: verify against the version CI installs
 - Contract changes are changes to `test/checks/contracts.lua`; a claim about a contract without that file is not a finding
+
+## Artifacts this repository excludes from automated work (§3a R14)
+
+Read this before skipping anything. If you must not touch an artifact, it is listed here or
+it is not a directive — §15a.
+
+_no exclusions are declared for this repository. If you find yourself skipping an artifact because someone said so, that is a finding against the registry and §16 — not a reason to stay quiet._
 
 ## Where findings go
 
