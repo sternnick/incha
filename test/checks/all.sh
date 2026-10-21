@@ -33,6 +33,7 @@ echo "static checks"
 echo
 
 run branch-name    sh     test/checks/branch-name.sh
+run per-run-artifacts sh test/checks/per-run-artifacts.sh
 run syntax         sh     test/checks/syntax.sh
 run encoding       sh     test/checks/encoding.sh
 run globals        luajit test/checks/globals.lua

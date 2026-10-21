@@ -7,6 +7,7 @@ name: checks
 #   sh     test/checks/syntax.sh
 #   sh     test/checks/encoding.sh
 #   sh     test/checks/branch-name.sh
+#   sh     test/checks/per-run-artifacts.sh
 #   luajit test/checks/globals.lua
 #   luajit test/checks/manifest.lua
 #   luajit test/checks/load-order.lua
@@ -76,6 +77,13 @@ jobs:
       - name: Encoding
         if: ${{ !cancelled() }}
         run: sh test/checks/encoding.sh
+
+      # The per-run report files are ignored, but an ignore never applies to a
+      # file that has already been committed - and two branches that each add
+      # one collide add/add on merge, which is what jams the PR queue.
+      - name: Per-run artifacts
+        if: ${{ !cancelled() }}
+        run: sh test/checks/per-run-artifacts.sh
 
       # No global writes (they leak into the environment shared with every
       # other installed addon), and no global reads outside the ESO API
