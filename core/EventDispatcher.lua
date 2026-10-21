@@ -422,7 +422,14 @@ function EventDispatcher.onCombatEventFiltered(trial, eventCode,
     if result == ACTION_RESULT_DIED then return end
     local context, alerts = trial.context, trial.alerts
     if result == ACTION_RESULT_BEGIN then
-        local raw = GetAbilityCastInfo(abilityId)
+        -- why: first return is the channeled bool, duration is the SECOND
+        -- (ESOUIDocumentation.txt API 101050, verified esodecoded.com
+        -- 2026-09-16).  Reading return 1 made castTime 0 for every real cast:
+        -- the F path always took the instant bucket, so beginCast.started
+        -- never fired and no interrupt timer was ever armed on the live
+        -- client (offline tests missed it because the old stub returned the
+        -- duration as return 1).
+        local _, raw = GetAbilityCastInfo(abilityId)
         local castTime = type(raw) == "number" and raw or 0
         EventDispatcher.dispatchBeginCast(boss, context, alerts,
             castTime, false, sourceUnitId, abilityId, sourceUnitName,
