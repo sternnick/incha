@@ -19,6 +19,9 @@ local LCCommon = {}
 local HINDERED        = 165972   -- tank-swap debuff
 local RADIANCE_DEBUFF = 214675   -- red screen border on player
 local SOLAR_FLARE     = 222475   -- Dremora Spellcaster cast bar
+local CONVEY_INIT_1   = 223028   -- effectRoutes.gained: Arcane Conveyance initial debuff, partner 1 → early tether warning
+local CONVEY_INIT_2   = 223029   -- effectRoutes.gained: Arcane Conveyance initial debuff, partner 2 → early tether warning
+local WEAKENING_CHARGE = 222613  -- effectRoutes.gained: Weakening Charge debuff on a player → tank-swap-relevant callout
 
 -- ── Fallback cast duration (ms) ───────────────────────────────────────────
 local FALL_SOLAR = 2500   -- Solar Flare: empirical
@@ -49,6 +52,25 @@ local function handleRadianceFaded(boss, ctx, alerts, abilityId, unitName, unitT
     CA.border(false, 0, "red")
 end
 
+-- Arcane Conveyance starts ~4s before the real tether (223060) with an
+-- initial mark debuff on the two tethered players. Warning at the initial
+-- debuff gives the pair 4 extra seconds to separate — CrutchAlerts does the
+-- same (zones/trials/LucentCitadel.lua:9,317-318).
+local function handleConveyanceInitial(boss, ctx, alerts, abilityId, unitName, unitTag, ...)
+    if not IsUnitPlayer(unitTag) then return end
+    alerts:showAction(Lang.t("lc_conv_tether_soon"))
+    CA.alert(nil, Lang.t("lc_conv_tether_soon"), 0xFF4444FF, SOUNDS.NONE, 3000)
+end
+
+-- Weakening Charge: debuff on a player that reduces their damage taken
+-- contribution for the tether mechanic — Crutch registers it on "group"
+-- and alerts everyone (LucentCitadel.lua:92-93,324).
+local function handleWeakeningCharge(boss, ctx, alerts, abilityId, unitName, unitTag, ...)
+    if not IsUnitPlayer(unitTag) then return end
+    alerts:showAction(Lang.t("lc_conv_weakening_charge",
+        (unitName and unitName ~= "") and unitName or Lang.t("lc_conv_weakening_you")))
+end
+
 -- ── Shared entries ────────────────────────────────────────────────────────
 
 LCCommon.beginCastEntries = {
@@ -59,6 +81,9 @@ LCCommon.effectChangedEntries = {
     gained = {
         [HINDERED]        = { type = AlertTypes.CUSTOM, fn = handleHindered },
         [RADIANCE_DEBUFF] = { type = AlertTypes.CUSTOM, fn = handleRadianceGained },
+        [CONVEY_INIT_1]   = { type = AlertTypes.CUSTOM, fn = handleConveyanceInitial },
+        [CONVEY_INIT_2]   = { type = AlertTypes.CUSTOM, fn = handleConveyanceInitial },
+        [WEAKENING_CHARGE] = { type = AlertTypes.CUSTOM, fn = handleWeakeningCharge },
     },
     faded = {
         [RADIANCE_DEBUFF] = { type = AlertTypes.CUSTOM, fn = handleRadianceFaded },
