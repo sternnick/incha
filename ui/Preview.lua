@@ -6,6 +6,7 @@
 --- of them at once.
 
 local Panel         = require("ui.Panel")
+local Log           = require("lib.Log")
 local CA            = require("external-api.CombatAlerts")
 local MechanicIcons = require("external-api.MechanicIcons")
 local Colors        = require("core.Colors")
@@ -34,9 +35,13 @@ local _instDn     = nil            -- display name of the target (local player)
 local function instAnimTick()
     if not _instDn then return end
     _instFrame = (_instFrame % INST_FRAMES) + 1
-    -- MechanicIcons takes a colour NAME; FLYZONE is the same warm orange the
-    -- live Falgravn animation uses.
-    MechanicIcons.set(_instDn, INST_FRAME_TEX[_instFrame], Colors.FLYZONE)
+    -- why: a throw inside MechanicIcons.set would make ESO auto-unregister the
+    -- RegisterForUpdate while _instActive stays true, so Preview.showInstability
+    -- would never re-register — animation silently dead for the session. pcall
+    -- in-body (Xalvakka.lua:106 pattern) keeps the tick alive and logs instead.
+    local ok, err = pcall(
+        MechanicIcons.set, _instDn, INST_FRAME_TEX[_instFrame], Colors.FLYZONE)
+    if not ok then Log.warn("Preview instAnim: %s", tostring(err)) end
 end
 
 local function stopInstAnim()
