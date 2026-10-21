@@ -1,0 +1,15 @@
+Reading log: test/fixtures/rg.log
+Parsed 2 entries (0 parse errors)
+Target trial: RG (zone 1263)
+
+=== Trial: RG (zone 1263) ===
+
+-- Summary --------------------------------------------------
+  COMBAT_EVENT entries processed : 0
+  EFFECT_CHANGED entries processed: 0
+  Bosses activated                : 0
+  Alerts fired                    : 0
+  Tracker rows written (A3)       : 0 writes across 0 keys
+  Handler errors                  : 0
+  Route entries never seen        : 0
+
