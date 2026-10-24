@@ -1,9 +1,9 @@
 # Hermes role — sternnick/incha
 
-contract_version: `1.3.0`
+contract_version: `1.4.0`
 contract: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent` — this is the authority; the file you are reading is
 the repository delta and it may only **tighten** the contract, never loosen it.
-mode: `branch_pr` — with the meaning given in contract §3.
+mode: `fork_review_only` — with the meaning given in contract §3.
 
 Bootstrap is contract §1: fetch, resolve the default branch, work detached from
 `origin/master`, and read the governing files **from that commit**. What you additionally
