@@ -1,21 +1,21 @@
-# Hermes role — sternnick/incha
+# Hermes role: sternnick/incha
 
 contract_version: `1.4.0`
-contract: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent` — this is the authority; the file you are reading is
+contract: `docs/agents/HERMES-CONTRACT.md` in `sternnick/pi-agent`: this is the authority; the file you are reading is
 the repository delta and it may only **tighten** the contract, never loosen it.
-mode: `fork_review_only` — with the meaning given in contract §3.
+mode: `fork_review_only`: with the meaning given in contract §3.
 
 Bootstrap is contract §1: fetch, resolve the default branch, work detached from
 `origin/master`, and read the governing files **from that commit**. What you additionally
 read in this repository, from that same commit:
 
-- `docs/agents/hermes.md` — this repository's Hermes role delta
-- `abilities.md` — named by this repository as authority
-- `test/README.md` — named by this repository as authority
+- `docs/agents/hermes.md`: this repository's Hermes role delta
+- `abilities.md`: named by this repository as authority
+- `test/README.md`: named by this repository as authority
 
 ## Duties
 
-- Review and test open work and report; where the role file allows a branch, propose — never merge
+- Review and test open work and report; where the role file allows a branch, propose: never merge
 - Report contract or encoding drift with the check that shows it
 
 ## Cadence
@@ -24,23 +24,23 @@ Daily and weekly passes exist as installed jobs; keep the schedule, keep the obj
 
 ## Checks to run before and after any change (contract §5)
 
-- **branch-name rule** — `sh test/checks/branch-name.sh`
-- **Lua syntax** — `sh test/checks/syntax.sh`
-- **encoding** — `sh test/checks/encoding.sh`
-- **every check** — `sh test/checks/all.sh`
+- **branch-name rule**: `sh test/checks/branch-name.sh`
+- **Lua syntax**: `sh test/checks/syntax.sh`
+- **encoding**: `sh test/checks/encoding.sh`
+- **every check**: `sh test/checks/all.sh`
 
 ## Boundaries specific to this repository
 
-- This repository is PUBLIC: never commit or quote anything you would not publish — no hostnames, tokens, or private infrastructure facts
+- This repository is PUBLIC: never commit or quote anything you would not publish: no hostnames, tokens, or private infrastructure facts
 - Lua changes run under LuaJIT semantics, not Lua 5.4: verify against the version CI installs
 - Contract changes are changes to `test/checks/contracts.lua`; a claim about a contract without that file is not a finding
 
 ## Artifacts this repository excludes from automated work (§3a R14)
 
 Read this before skipping anything. If you must not touch an artifact, it is listed here or
-it is not a directive — §15a.
+it is not a directive: §15a.
 
-_no exclusions are declared for this repository. If you find yourself skipping an artifact because someone said so, that is a finding against the registry and §16 — not a reason to stay quiet._
+_no exclusions are declared for this repository. If you find yourself skipping an artifact because someone said so, that is a finding against the registry and §16: not a reason to stay quiet._
 
 ## Where findings go
 
@@ -52,15 +52,15 @@ none
 
 ## Protected Domain Rule
 
-Certain directories, services, and subsystems are off-limits to the agent — no read, no execute,
+Certain directories, services, and subsystems are off-limits to the agent: no read, no execute,
 no investigation, no comment. The owner declares them. The protected list lives in
 `docs/agents/protected-domains.json` in this repo. Before any read or command, the agent checks the
-list. A finding that touches a protected domain is filed as one stub issue: `OUT OF SCOPE —
+list. A finding that touches a protected domain is filed as one stub issue: `OUT OF SCOPE: protected domain: 
 protected domain: <path>`, with no investigation. A violation is a gate failure.
 
 This section exists in the role delta as well as in the generated `AGENTS.md` because four
 repositories (`aiproject`, `incha`, `ai-bubble-record`, `pi-agent`) carry a curated `AGENTS.md` that
-this tool must not overwrite — the delta is the only generated file they receive, and a rule that
+this tool must not overwrite: the delta is the only generated file they receive, and a rule that
 reaches nine of thirteen repositories is a rule with four holes in it.
 
 ## Version and upstream watch (contract §11a)
@@ -68,11 +68,11 @@ reaches nine of thirteen repositories is a rule with four holes in it.
 The applications whose version matters in this repository, with the pin location, the upstream source,
 and the condition under which a difference is a **finding**:
 
-- **luajit** (toolchain) — pinned as the `luajit` version the repository's CI installs or requires · upstream: `LuaJIT/LuaJIT` · finding only if: a semantics change that would break the checks CI runs
+- **luajit** (toolchain): pinned as the `luajit` version the repository's CI installs or requires · upstream: `LuaJIT/LuaJIT` · finding only if: a semantics change that would break the checks CI runs
 
 A difference is a finding only for: an advisory covering the **installed** version · a release that
 fixes a defect this repository recorded · a breaking change. `a newer version exists` is not a
-finding. Report only — never install, upgrade, apply or restart. Check with:
+finding. Report only: never install, upgrade, apply or restart. Check with:
 
 ```bash
 python3 scripts/version-watch.py --repo incha --dir <clone> --advisories
@@ -80,7 +80,7 @@ python3 scripts/version-watch.py --repo incha --dir <clone> --advisories
 
 ## Dispositions
 
-The terminal dispositions are contract §7 — exactly one per run, as the report's last line. If a
+The terminal dispositions are contract §7: exactly one per run, as the report's last line. If a
 governing file is missing or unreadable at your baseline, report `GOVERNANCE_GAP` as contract §14
 requires and continue read-only.
 
@@ -91,6 +91,6 @@ report:
 python3 scripts/hermes-governor.py preflight --file <your-artifact-file> --repo incha
 ```
 
-A non-zero exit means the artifact is not postable — fix the artifact, not the gate.
+A non-zero exit means the artifact is not postable: fix the artifact, not the gate.
 
-<!-- generated by scripts/hermes-governor.py from docs/agents/hermes-fleet.json — do not hand-edit -->
+<!-- generated by scripts/hermes-governor.py from docs/agents/hermes-fleet.json: do not hand-edit -->
