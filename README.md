@@ -116,8 +116,8 @@ nine trials, rather than a per-trial `Dispatcher.lua`.
 - Boss modules declare an `events` table (`beginCast` / `effectChanged` / `combatEvent` buckets keyed by ability ID), plus optional `onEnter`, `onWipe`, `onLeave`, `onUpdate` and `onPowerUpdate` hooks. `BossBase` supplies `new()` via `fromSchema`, the default `onDied`, `cleanupAlertList`, and `after`/`cancelAfter` for deferred callbacks.
 - Combat and effect events are registered **per ability ID**. An ability missing from a boss's `events` table is never registered, so its handler is dead code. Shared per-trial mechanics live in a `<Trial>Common.lua` module whose entries every boss must merge — `test/checks/filters.lua` fails when one is missing.
 - `stateSchema` on each boss declares its per-pull state; `BossBase.fromSchema` builds instances from it and `resetSchema` restores it on wipe.
-- Zone IDs, boss name strings and hardmode thresholds needing in-game verification are tracked in the [Verification sprint](https://github.com/oseias-pt/incha/milestone/2) milestone.
+- Zone IDs, boss name strings and hardmode thresholds needing in-game verification are tracked in the the verification milestone in the private source repository milestone.
 - OSI calls must always be nil-guarded; the dependency is optional.
 
-Work in flight is tracked in [GitHub issues](https://github.com/oseias-pt/incha/issues) and the [project board](https://github.com/users/oseias-pt/projects/3).
+Work in flight is tracked in GitHub issues in the private source repository and the project board.
 Why the code is shaped the way it is — load model, lifecycle, dispatch, i18n, per-trial detection — is in [docs/decisions](docs/decisions).
