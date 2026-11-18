@@ -1,9 +1,17 @@
 {
-  "version": "1.1.0",
-  "last_verified_utc": "2026-10-10T08:07:55Z",
-  "verified_by": "cp-hermes-01",
+  "version": "1.2.0",
+  "last_verified_utc": "2026-11-18T09:05:00Z",
+  "verified_by": "pi-agent-session",
   "verification_method": "owner-directive",
   "domains": [
+    {
+      "pattern": "host:*",
+      "reason": "owner rule 2026-11-18: no agent access to ANY existing VM or host. No ssh, scp, rsync or docker exec against a machine, and no reading the ssh config to find out which machines exist: the inventory belongs to the owner. Work that needs a machine stops and asks, and the owner provisions a new isolated one. Declared as a class rather than a name list, so this file never writes the hostname of a machine that must not be named"
+    },
+    {
+      "pattern": "**/.ssh/**",
+      "reason": "owner rule 2026-11-18: keys, config and known_hosts are not a lane's to read. A hostname discovered there is also the leak the rule above exists to prevent"
+    },
     {
       "pattern": "**/proxmox-backup-server/**",
       "reason": "backup infrastructure"
